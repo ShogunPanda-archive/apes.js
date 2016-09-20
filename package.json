@@ -9,7 +9,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "prepublish": "npm run clean && tsc && npm run docs",
+    "prepublish": "npm run predocs && git commit -a -m 'Updated documentation'",
     "postpublish": "git push origin --tags && git push origin",
     "pretest": "npm run clean",
     "test": "./node_modules/.bin/mocha --recursive test",
@@ -17,6 +17,7 @@
     "prepare-coverage": "npm run clean && ./node_modules/.bin/tsc -p test/tsconfig.json && ./node_modules/.bin/istanbul --report=json cover ./node_modules/.bin/_mocha -- --opts test/fixtures --recursive test/",
     "coverage": "npm run prepare-coverage && ./node_modules/.bin/remap-istanbul -i coverage/coverage-final.json -o coverage -t html",
     "travis-ci": "npm run prepare-coverage && ./node_modules/.bin/remap-istanbul -i coverage/coverage-final.json -t lcovonly | ./node_modules/coveralls/bin/coveralls.js",
+    "predocs": "npm run clean && tsc",
     "docs": "./node_modules/.bin/jsdoc -c .jsdoc.json -t ./node_modules/minami -R README.md -r",
     "clean": "rm -rf log test/log && find lib test -name '*.js' -delete -o -name '*.map' -delete"
   },
