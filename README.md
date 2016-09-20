@@ -26,7 +26,7 @@ To create a Node.js application which already takes care of logging, extend the 
 Then, instantiate the class and call it's `run` method.
  
 ```javascript
-const apes = require(apes);
+const apes = require("apes");
 
 class CustomApplication extends apes.Application{
   prepare(){
@@ -52,7 +52,7 @@ To create a fully working light-weight HTTP server, extend the `HTTPServer` clas
 Then, instantiate the class and call it's `run` method.
 
 ```javascript
-const apes = require(apes);
+const apes = require("apes");
 
 class CustomServer extends apes.HTTP.Server{
   addRoutes(){
