@@ -28,7 +28,7 @@ Then, instantiate the class and call it's `run` method.
 ```javascript
 const apes = require(apes);
 
-class CustomApplication extends apes.Application(){
+class CustomApplication extends apes.Application{
   prepare(){
     // Do something here
   }
@@ -54,7 +54,7 @@ Then, instantiate the class and call it's `run` method.
 ```javascript
 const apes = require(apes);
 
-class CustomServer extends apes.HTTP.Server(){
+class CustomServer extends apes.HTTP.Server{
   addRoutes(){
     // Do something here - Core logic goes here.
   }
