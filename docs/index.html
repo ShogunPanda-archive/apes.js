@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="HTTP.Server.html">Server</a><ul class='methods'><li data-type='method'><a href="HTTP.Server.html#addCORSHandling">addCORSHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addErrorHandling">addErrorHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addMiddlewares">addMiddlewares</a></li><li data-type='method'><a href="HTTP.Server.html#addRoutes">addRoutes</a></li><li data-type='method'><a href="HTTP.Server.html#errorHandler">errorHandler</a></li><li data-type='method'><a href="HTTP.Server.html#execute">execute</a></li><li data-type='method'><a href="HTTP.Server.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="HTTP.Server.html#logRequest">logRequest</a></li><li data-type='method'><a href="HTTP.Server.html#prepare">prepare</a></li><li data-type='method'><a href="HTTP.Server.html#redirectTo">redirectTo</a></li><li data-type='method'><a href="HTTP.Server.html#sendGeneralError">sendGeneralError</a></li><li data-type='method'><a href="HTTP.Server.html#sendResponse">sendResponse</a></li><li data-type='method'><a href="HTTP.Server.html#setupStaticFolder">setupStaticFolder</a></li><li data-type='method'><a href="HTTP.Server.html#sslConfig">sslConfig</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="HTTP.html">HTTP</a><ul class='methods'><li data-type='method'><a href="HTTP.html#.Profiler">Profiler</a></li></ul></li><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#default">default</a></li></ul>
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+    <section class="readme">
+        <article><h1>apes.js</h1><p><a href="http://badge.fury.io/js/apes.js"><img src="https://badge.fury.io/js/apes.js.png" alt="Package Version"></a>
+<a href="https://gemnasium.com/ShogunPanda/apes.js"><img src="https://gemnasium.com/ShogunPanda/apes.js.png?travis" alt="Dependency Status"></a>
+<a href="http://travis-ci.org/ShogunPanda/apes.js"><img src="https://secure.travis-ci.org/ShogunPanda/apes.js.png?branch=master" alt="Build Status"></a>
+<a href="https://coveralls.io/github/ShogunPanda/apes.js?branch=master"><img src="https://coveralls.io/repos/github/ShogunPanda/apes.js/badge.svg?branch=master" alt="Coverage Status"></a></p>
+<p>A tiny application and HTTP API framework for Express.js.</p>
+<p>https://sw.cowtech.it/apes.js</p>
+<h2>Supported implementations.</h2><p>apes.js is written in <a href="https://typescriptlang.org">TypeScript</a>. </p>
+<p>It can be used in TypeScript (using Typescript 2.0) or simply in plain Javacript.</p>
+<p>It supports and has been tested on <a href="http://nodejs.org">NodeJS</a> 6.0+.</p>
+<h2>Usage</h2><h3>Standalone application</h3><p>To create a Node.js application which already takes care of logging, extend the <code>Application</code> class and override its <code>prepare</code>, <code>execute</code> and <code>cleanup</code> methods.</p>
+<p>Then, instantiate the class and call it's <code>run</code> method.</p>
+<pre class="prettyprint source lang-javascript"><code>const apes = require(apes);
+
+class CustomApplication extends apes.Application(){
+  prepare(){
+    // Do something here
+  }
+
+  execute(){
+    // Do something here - Core logic goes here.
+  }
+
+  cleanup(){
+    // Do something here
+  }
+}
+
+new CustomApplication().run();</code></pre><h3>HTTP Server</h3><p>To create a fully working light-weight HTTP server, extend the <code>HTTPServer</code> class and override its <code>addRoutes</code> and <code>addMiddlewares</code> methods.</p>
+<p>Then, instantiate the class and call it's <code>run</code> method.</p>
+<pre class="prettyprint source lang-javascript"><code>const apes = require(apes);
+
+class CustomServer extends apes.HTTP.Server(){
+  addRoutes(){
+    // Do something here - Core logic goes here.
+  }
+
+  addMiddlewares(){
+    // Do something here - Optional
+  }
+}
+
+new CustomServer().run();</code></pre><h2>API Documentation</h2><p>The API documentation can be found <a href="https://shogunpanda.github.io/apes.js">here</a>.</p>
+<h2>Contributing to apes.js</h2><ul>
+<li>Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.</li>
+<li>Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.</li>
+<li>Fork the project.</li>
+<li>Start a feature/bugfix branch.</li>
+<li>Commit and push until you are happy with your contribution.</li>
+<li>Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.</li>
+</ul>
+<h2>Copyright</h2><p>Copyright (C) 2016 and above Shogun <a href="&#x6d;&#97;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#115;&#x68;&#x6f;&#103;&#x75;&#110;&#64;&#99;&#x6f;&#119;&#116;&#x65;&#99;&#104;&#46;&#105;&#x74;">&#115;&#x68;&#x6f;&#103;&#x75;&#110;&#64;&#99;&#x6f;&#119;&#116;&#x65;&#99;&#104;&#46;&#105;&#x74;</a>.</p>
+<p>Licensed under the MIT license, which can be found at http://opensource.org/licenses/MIT.</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Tue Sep 20 2016 09:01:19 GMT+0200 (CEST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "env1":{
+    "key": "value"
+  },
+  "env2": {
+    "httpServer": {
+      "port": "A",
+      "ssl": "B"
+    }
+  }
+}
