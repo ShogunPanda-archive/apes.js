@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "prepublish": "npm run predocs && git commit -a -m 'Updated documentation'",
-    "postpublish": "git push origin --tags && git push origin",
+    "postpublish": "git push origin --tags && git push -f origin",
     "pretest": "npm run clean",
     "test": "./node_modules/.bin/mocha --recursive test",
     "posttest": "npm run clean && ./node_modules/.bin/tslint --project test/tsconfig.json -t verbose --type-check .",
