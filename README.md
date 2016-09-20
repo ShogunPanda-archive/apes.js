@@ -1,6 +1,6 @@
 # apes.js
 
-[![Package Version](https://badge.fury.io/js/apes.js.png)](http://badge.fury.io/js/apes.js)
+[![Package Version](https://badge.fury.io/js/apes.png)](http://badge.fury.io/js/apes)
 [![Dependency Status](https://gemnasium.com/ShogunPanda/apes.js.png?travis)](https://gemnasium.com/ShogunPanda/apes.js)
 [![Build Status](https://secure.travis-ci.org/ShogunPanda/apes.js.png?branch=master)](http://travis-ci.org/ShogunPanda/apes.js)
 [![Coverage Status](https://coveralls.io/repos/github/ShogunPanda/apes.js/badge.svg?branch=master)](https://coveralls.io/github/ShogunPanda/apes.js?branch=master)
