@@ -7,7 +7,8 @@ import * as path from "path";
 import * as winston from "winston";
 import * as fs from "fs-extra";
 import * as Bluebird from "bluebird";
-import Application from "./application";
+
+import {Application} from "./application";
 
 const mkdirsAsync = Bluebird.promisify(fs.mkdirs);
 
@@ -23,35 +24,35 @@ declare module "winston"{
 /**
  * A class to perform rich logging.
  */
-export default class Logger{
+export class Logger{
   /**
    * The target log file. It will be stored in the `log` folder with the current environment appended.
    *
    * @type {string}
    */
   public target: string;
-  
+
   /**
    * Whether or not also log on console.
    *
    * @type {boolean}
    */
   public useConsole: boolean;
-  
+
   /**
    * The root folder for the log file. Usually it's the `log` in the current working directory.
    *
    * @type {string}
    */
   public root: string;
-  
+
   /**
    * The logging backend.
    *
    * @type {winston.LoggerInstance}
    */
   public backend: winston.LoggerInstance;
-  
+
   /**
    * Creates a new Logger.
    *
@@ -63,7 +64,7 @@ export default class Logger{
     this.target = target;
     this.useConsole = useConsole;
   }
-  
+
   /**
    * Prepares the logger for use.
    *
@@ -95,7 +96,7 @@ export default class Logger{
       return Promise.reject(e);
     }
   }
-  
+
   /**
    * Logs a message with info priority level `info`.
    *
@@ -105,7 +106,7 @@ export default class Logger{
   public info(...args: any[]): Promise<winston.LoggerInstance>{
     return this.backend.infoAsync(...args);
   }
-  
+
   /**
    * Logs a message with info priority level `warn`.
    *
@@ -115,7 +116,7 @@ export default class Logger{
   public warn(...args: any[]): Promise<winston.LoggerInstance>{
     return this.backend.warnAsync(...args);
   }
-  
+
   /**
    * Logs a message with info priority level `error`.
    *
@@ -125,7 +126,7 @@ export default class Logger{
   public error(...args: any[]): Promise<winston.LoggerInstance>{
     return this.backend.errorAsync(...args);
   }
-  
+
   /**
    * Logs a message with info priority level `fatal` and then quits the process.
    *
@@ -135,7 +136,7 @@ export default class Logger{
   public fatal(...args: any[]): Promise<void>{
     return this.backend.errorAsync(...args).then(() => process.exit(1));
   }
-  
+
   /**
    * Logs a message with info priority level `debug`.
    *

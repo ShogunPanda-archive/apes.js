@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="HTTP.Server.html">Server</a><ul class='methods'><li data-type='method'><a href="HTTP.Server.html#addCORSHandling">addCORSHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addErrorHandling">addErrorHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addMiddlewares">addMiddlewares</a></li><li data-type='method'><a href="HTTP.Server.html#addRoutes">addRoutes</a></li><li data-type='method'><a href="HTTP.Server.html#errorHandler">errorHandler</a></li><li data-type='method'><a href="HTTP.Server.html#execute">execute</a></li><li data-type='method'><a href="HTTP.Server.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="HTTP.Server.html#logRequest">logRequest</a></li><li data-type='method'><a href="HTTP.Server.html#prepare">prepare</a></li><li data-type='method'><a href="HTTP.Server.html#redirectTo">redirectTo</a></li><li data-type='method'><a href="HTTP.Server.html#sendGeneralError">sendGeneralError</a></li><li data-type='method'><a href="HTTP.Server.html#sendResponse">sendResponse</a></li><li data-type='method'><a href="HTTP.Server.html#setupStaticFolder">setupStaticFolder</a></li><li data-type='method'><a href="HTTP.Server.html#sslConfig">sslConfig</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="HTTP.html">HTTP</a><ul class='methods'><li data-type='method'><a href="HTTP.html#.Profiler">Profiler</a></li></ul></li><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#default">default</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li><li>{<a href="global.html#HTTP">HTTP</a>}</li></ul><h3>Global</h3><ul><li><a href="global.html#HTTP">HTTP</a></li></ul>
 </nav>
 
 <div id="main">
@@ -64,7 +64,7 @@ class Application {
      */
     constructor(configurationPath = "config/application") {
         this.configurationPath = path.resolve(Application.root, configurationPath);
-        this.logger = new logger_1.default(`${Application.environment}-main`, true);
+        this.logger = new logger_1.Logger(`${Application.environment}-main`, true);
     }
     /**
      * Performs the main application loop.
@@ -74,6 +74,7 @@ class Application {
     run() {
         return __awaiter(this, void 0, void 0, function* () {
             let error = null;
+            let cleaned = false;
             try {
                 yield this.logger.prepare();
             }
@@ -92,6 +93,7 @@ class Application {
                 // Cleanup
                 yield this.logger.info("All operations completed. Exiting ...");
                 yield this.cleanup();
+                cleaned = true;
                 return Promise.resolve();
             }
             catch (e) {
@@ -101,7 +103,8 @@ class Application {
             }
             finally {
                 try {
-                    yield this.cleanup();
+                    if (!cleaned)
+                        yield this.cleanup();
                 }
                 catch (e) {
                 }
@@ -152,11 +155,7 @@ class Application {
         return this.logger.warn(`${this.constructor.name}.cleanup should override Application.cleanup.`);
     }
 }
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * A boilerplate for Node.js applications.
- */
-exports.default = Application;
+exports.Application = Application;
 /**
  * The base path for all I/O.
  *
@@ -199,7 +198,7 @@ Application.debug = process.env.NODE_DEBUG &amp;&amp; process.env.NODE_DEBUG.ind
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Tue Sep 20 2016 09:16:32 GMT+0200 (CEST) using the Minami theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Tue Sep 20 2016 12:03:35 GMT+0200 (CEST) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>

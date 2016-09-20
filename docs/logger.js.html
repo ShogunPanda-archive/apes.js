@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="HTTP.Server.html">Server</a><ul class='methods'><li data-type='method'><a href="HTTP.Server.html#addCORSHandling">addCORSHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addErrorHandling">addErrorHandling</a></li><li data-type='method'><a href="HTTP.Server.html#addMiddlewares">addMiddlewares</a></li><li data-type='method'><a href="HTTP.Server.html#addRoutes">addRoutes</a></li><li data-type='method'><a href="HTTP.Server.html#errorHandler">errorHandler</a></li><li data-type='method'><a href="HTTP.Server.html#execute">execute</a></li><li data-type='method'><a href="HTTP.Server.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="HTTP.Server.html#logRequest">logRequest</a></li><li data-type='method'><a href="HTTP.Server.html#prepare">prepare</a></li><li data-type='method'><a href="HTTP.Server.html#redirectTo">redirectTo</a></li><li data-type='method'><a href="HTTP.Server.html#sendGeneralError">sendGeneralError</a></li><li data-type='method'><a href="HTTP.Server.html#sendResponse">sendResponse</a></li><li data-type='method'><a href="HTTP.Server.html#setupStaticFolder">setupStaticFolder</a></li><li data-type='method'><a href="HTTP.Server.html#sslConfig">sslConfig</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="HTTP.html">HTTP</a><ul class='methods'><li data-type='method'><a href="HTTP.html#.Profiler">Profiler</a></li></ul></li><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#default">default</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li><li>{<a href="global.html#HTTP">HTTP</a>}</li></ul><h3>Global</h3><ul><li><a href="global.html#HTTP">HTTP</a></li></ul>
 </nav>
 
 <div id="main">
@@ -68,7 +68,7 @@ class Logger {
      * @param {boolean} useConsole Whether or not also log on console.
      */
     constructor(target, useConsole = false) {
-        this.root = path.resolve(application_1.default.root, "log");
+        this.root = path.resolve(application_1.Application.root, "log");
         this.target = target;
         this.useConsole = useConsole;
     }
@@ -83,9 +83,9 @@ class Logger {
                 return Promise.resolve(this);
             try {
                 yield mkdirsAsync(this.root);
-                const target = path.resolve(this.root, `${this.target}-${application_1.default.environment}.log`);
+                const target = path.resolve(this.root, `${this.target}-${application_1.Application.environment}.log`);
                 // Create transports
-                const level = application_1.default.debug ? "debug" : "verbose";
+                const level = application_1.Application.debug ? "debug" : "verbose";
                 const transports = [
                     new winston.transports.File({ name: "file", filename: target, level, stderrLevels: ["error"], colorize: true, timestamp: true })
                 ];
@@ -144,16 +144,12 @@ class Logger {
      * @returns {Promise&lt;LoggerInstance>} The backend in case of success, the error otherwise.
      */
     debug(...args) {
-        if (!application_1.default.debug)
+        if (!application_1.Application.debug)
             return Promise.resolve(this.backend);
         return this.backend.debugAsync(...args);
     }
 }
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * A class to perform rich logging.
- */
-exports.default = Logger;
+exports.Logger = Logger;
 </code></pre>
         </article>
     </section>
@@ -166,7 +162,7 @@ exports.default = Logger;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Tue Sep 20 2016 09:16:32 GMT+0200 (CEST) using the Minami theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Tue Sep 20 2016 12:03:35 GMT+0200 (CEST) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>

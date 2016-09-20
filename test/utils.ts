@@ -6,7 +6,7 @@
 import {expect} from "chai";
 import * as sinon from "sinon";
 
-import * as Utils from "../lib/utils";
+import {Utils} from "../lib/utils";
 
 describe("Utils", function(){
   describe(".encodeBase64", function(){

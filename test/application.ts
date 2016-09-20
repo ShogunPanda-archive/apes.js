@@ -15,8 +15,8 @@ chai.use(require("chai-as-promised"));
 
 process.env.NODE_DEBUG = "apes";
 
-import Application from "../lib/application";
-import Logger from "../lib/logger";
+import {Application} from "../lib/application";
+import {Logger} from "../lib/logger";
 
 describe("Application", function(){
   class ApplicationVerifier extends Application{
@@ -69,7 +69,7 @@ describe("Application", function(){
         expect(loadConfigurationStub.called).to.be.ok;
         expect(prepareStub.called).to.be.ok;
         expect(executeStub.called).to.be.ok;
-        expect(cleanupStub.callCount).to.equal(2);
+        expect(cleanupStub.called).to.be.ok;
         expect(loadConfigurationStub.called).to.be.ok;
         expect(exitStub.calledWith(0)).to.be.ok;
 

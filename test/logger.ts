@@ -13,8 +13,8 @@ import * as path from "path";
 
 chai.use(require("chai-as-promised"));
 
-import Application from "../lib/application";
-import Logger from "../lib/logger";
+import {Application} from "../lib/application";
+import {Logger} from "../lib/logger";
 
 declare module "winston"{
   export interface TransportInstance{

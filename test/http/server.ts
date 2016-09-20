@@ -11,6 +11,7 @@ import * as sinon from "sinon";
 import * as express from "express";
 import * as http from "http";
 import * as https from "https";
+import * as os from "os";
 import * as path from "path";
 import * as fs from "fs-extra";
 import * as winston from "winston";
@@ -18,9 +19,9 @@ import * as winston from "winston";
 chai.use(require("chai-as-promised"));
 chai.use(require("chai-http"));
 
-import Application from "../../lib/application";
-import Logger from "../../lib/logger";
-import Server from "../../lib/http/server";
+import {Application} from "../../lib/application";
+import {Logger} from "../../lib/logger";
+import {HTTP} from "../../lib/http/server";
 
 const SERVER_DELAY: number = 10;
 let basePort = 3010;
@@ -34,8 +35,25 @@ declare global {
   }
 }
 
+describe("HTTP.Profiler", function(){
+  it("should add profiling information to the response", function(){
+    const hrtimeStub = sinon.stub(process, "hrtime").returns([4, 123000]);
+
+    const subject = express();
+    subject.use(HTTP.Profiler);
+    subject.get("/", (req, res) => res.status(200).end());
+
+    return chai.request(subject).get("/").then(response => {
+      hrtimeStub.restore();
+
+      expect(response).to.have.header("X-Served-By", os.hostname());
+      expect(response).to.have.header("X-Response-Time", "4000.123ms");
+    });
+  });
+});
+
 describe("HTTP.Server", function(){
-  class ServerVerifier extends Server{
+  class ServerVerifier extends HTTP.Server{
     public express: express.Application;
     public sandbox: sinon.SinonSandbox;
 
@@ -104,12 +122,12 @@ describe("HTTP.Server", function(){
         });
       }, SERVER_DELAY);
     });
-  
+
     it("should close pending connection without blocking when quitting", function(done){
       this.subject.prepare().then(() => this.subject.execute());
-    
+
       const agent = new http.Agent({keepAlive: true, keepAliveMsecs: 3000});
-    
+
       setTimeout(() => {
         http.get({hostname: "127.0.0.1", port: basePort - 1, path: "/ping", agent}, (response) => {
           process.kill(process.pid, "SIGUSR2");
@@ -118,7 +136,7 @@ describe("HTTP.Server", function(){
 
       }, SERVER_DELAY);
     });
-    
+
     it("should support text response", function(done){
       this.subject.addRoutes = function(){
         this.express.get("/foo", (req: express.Request, res: express.Response) => this.sendResponse(req, res, 200, "TEXT", [1, 2]));
@@ -155,39 +173,39 @@ describe("HTTP.Server", function(){
         });
       }, SERVER_DELAY);
     });
-  
+
     it("should support redirect response", function(done){
       this.subject.addRoutes = function(){
         this.express.get("/foo", (req: express.Request, res: express.Response) => this.redirectTo(req, res, 301, "https://google.it", [1, 2]));
       };
-    
+
       this.subject.prepare().then(() => this.subject.execute());
-    
+
       setTimeout(() => {
         chai.request(this.subject.express).get("/foo").redirects(0).then(Promise.reject).catch(error => {
           const response = Reflect.get(error, "response");
           expect(response).to.have.status(301);
           expect(response).to.redirectTo("https://google.it");
-          
+
           process.kill(process.pid, "SIGUSR2");
           done();
         });
       }, SERVER_DELAY);
     });
-  
+
     it("should support redirect response with a default code", function(done){
       this.subject.addRoutes = function(){
         this.express.get("/foo", (req: express.Request, res: express.Response) => this.redirectTo(req, res, null, "https://google.it"));
       };
-    
+
       this.subject.prepare().then(() => this.subject.execute());
-    
+
       setTimeout(() => {
         chai.request(this.subject.express).get("/foo").redirects(0).then(Promise.reject).catch(error => {
           const response = Reflect.get(error, "response");
           expect(response).to.have.status(302);
           expect(response).to.redirectTo("https://google.it");
-        
+
           process.kill(process.pid, "SIGUSR2");
           done();
         });
