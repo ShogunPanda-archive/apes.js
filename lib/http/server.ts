@@ -10,7 +10,7 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as compression from "compression";
 import * as http from "http";
-import * as https from "https";
+const http2 = require("http2"); // tslint:disable-line:no-require-imports no-var-requires
 import * as net from "net";
 import * as winston from "winston";
 import onHeaders = require("on-headers"); // tslint:disable-line:no-require-imports
@@ -158,7 +158,7 @@ export namespace HTTP{
 
         // Create a HTTP(s) server - SSL is forbiddne in production mode since there should always be a webserver like Nginx in front
         const useSSL: boolean = (process.env.SSL || this.configuration.httpServer.ssl.enabled) && !Application.production;
-        this.server = useSSL ? https.createServer(this.sslConfig(), this.express) : http.createServer(this.express);
+        this.server = useSSL ? http2.createServer(this.sslConfig(), this.express) : http.createServer(this.express);
 
         // Listen to the port
         this.server.listen(this.configuration.httpServer.port, () => {
@@ -221,7 +221,7 @@ export namespace HTTP{
      * Adds routes to the Express server. This is reserved for subclasses to override. Default implementation does nothing.
      */
     protected addRoutes(){
-      // TODO@PI: Write me
+      // Default implementation is a no-op
     }
 
     /**

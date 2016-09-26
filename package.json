@@ -47,6 +47,7 @@
     "compression": "~1.6.2",
     "express": "~4.14.0",
     "fs-extra": "~0.30.0",
+    "http2": "^3.3.6",
     "on-headers": "~1.0.1",
     "serve-static": "~1.11.1",
     "sprintf-js": "~1.0.3",
