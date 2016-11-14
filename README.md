@@ -11,11 +11,9 @@ https://sw.cowtech.it/apes.js
 
 ## Supported implementations.
 
-apes.js is written in [TypeScript](https://typescriptlang.org). 
+apes.js is written using async/await, which is available from Node 7.0.0 using `--harmony-async-await` flag.
 
-It can be used in TypeScript (using Typescript 2.0) or simply in plain Javacript.
-
-It supports and has been tested on [NodeJS](http://nodejs.org) 6.0+.
+It supports and has been tested on [NodeJS](http://nodejs.org) 7.0+, using `--harmony-async-await` for async/await support.
 
 ## Usage
 

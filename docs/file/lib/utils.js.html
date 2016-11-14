@@ -1,12 +1,56 @@
-/*
- * This file is part of the apes.js npm package. Copyright (C) 2016 and above Shogun <shogun@cowtech.it>.
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">lib/utils.js | API Document</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  
+  
+  <script src="script/manual.js"></script>
+</head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <a data-ice="repoURL" href="https://github.com/ShogunPanda/apes" class="repo-url-github">Repository</a>
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+</header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/application.js~Application.html">Application</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/http-server.js~HTTPServer.html">HTTPServer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/logger.js~Logger.html">Logger</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/runtime-error.js~RuntimeError.html">RuntimeError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/utils.js~Utils.html">Utils</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">lib/utils.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/*
+ * This file is part of the apes.js npm package. Copyright (C) 2016 and above Shogun &lt;shogun@cowtech.it&gt;.
  * Licensed under the MIT license, which can be found at http://www.opensource.org/licenses/mit-license.php.
  */
 
-const moment = require("moment");
-const crypto = require("crypto");
+const moment = require(&quot;moment&quot;);
+const crypto = require(&quot;crypto&quot;);
 
-const Constants = require("./constants");
+const Constants = require(&quot;./constants&quot;);
 
 /**
  * A set of common utility methods.
@@ -23,9 +67,9 @@ class Utils{
    */
   static utcDate(date){
     if(!date)
-      date = moment().format("YYYY-MM-DD");
+      date = moment().format(&quot;YYYY-MM-DD&quot;);
 
-    return moment.utc(`${date} 00:00:00 +0000`, "YYYY-MM-DD HH:mm:ss Z");
+    return moment.utc(`${date} 00:00:00 +0000`, &quot;YYYY-MM-DD HH:mm:ss Z&quot;);
   }
 
   /**
@@ -41,7 +85,7 @@ class Utils{
       array = [array];
 
     for(let item of array){ // eslint-disable-line prefer-const
-      if(Array.isArray(item) && maxDepth !== 0)
+      if(Array.isArray(item) &amp;&amp; maxDepth !== 0)
         Utils.flatten(item, maxDepth - 1, result);
       else
         result.push(item);
@@ -80,7 +124,7 @@ class Utils{
    * @returns {boolean} `true` if `target` is a non-string or if it is empty, `false` otherwise.
    */
   static isEmptyString(target){
-    return typeof target !== "string" || !target.trim().length;
+    return typeof target !== &quot;string&quot; || !target.trim().length;
   }
 
   /**
@@ -94,8 +138,8 @@ class Utils{
     if(!Array.isArray(list))
       list = [list];
 
-    const entries = Utils.flatten(list).filter(k => k).map(el => el.toString().split(pattern).map(k => k.trim())); // Flatten, remove empty values, split by comma and trim
-    return Utils.uniq(Utils.flatten(entries).filter(k => k)); // Flatten again, remove empty values, then duplicates
+    const entries = Utils.flatten(list).filter(k =&gt; k).map(el =&gt; el.toString().split(pattern).map(k =&gt; k.trim())); // Flatten, remove empty values, split by comma and trim
+    return Utils.uniq(Utils.flatten(entries).filter(k =&gt; k)); // Flatten again, remove empty values, then duplicates
   }
 
   /**
@@ -105,7 +149,7 @@ class Utils{
    * @returns {string} The enccoded data.
    */
   static encodeBase64(data){
-    return Buffer.from(data, "utf8").toString("base64").toString("base64");
+    return Buffer.from(data, &quot;utf8&quot;).toString(&quot;base64&quot;).toString(&quot;base64&quot;);
   }
 
   /**
@@ -116,9 +160,9 @@ class Utils{
    * @returns {string|Buffer} The decoded data.
    */
   static decodeBase64(data, asString = true){
-    const decoded = Buffer.from(data, "base64");
+    const decoded = Buffer.from(data, &quot;base64&quot;);
 
-    return asString ? decoded.toString("utf8") : decoded;
+    return asString ? decoded.toString(&quot;utf8&quot;) : decoded;
   }
 
   /**
@@ -128,7 +172,7 @@ class Utils{
    * @returns {string} The MD5 hash of the input string.
    */
   static md5(data){
-    return crypto.createHash("md5").update(data).digest("hex");
+    return crypto.createHash(&quot;md5&quot;).update(data).digest(&quot;hex&quot;);
   }
 
   /**
@@ -138,7 +182,7 @@ class Utils{
    * @returns {boolean} The boolean value.
    */
   static parseBoolean(value){
-    return value && value.toString().match(Constants.Utils.TRUE_BOOLEAN_MATCHER) !== null;
+    return value &amp;&amp; value.toString().match(Constants.Utils.TRUE_BOOLEAN_MATCHER) !== null;
   }
 
   /**
@@ -149,22 +193,22 @@ class Utils{
    * @returns {moment} The parsed date.
    */
   static parseDate(raw, fallback = null){
-    if(typeof raw === "string" || typeof raw === "number"){
+    if(typeof raw === &quot;string&quot; || typeof raw === &quot;number&quot;){
       raw = raw.toString();
 
       let value = null;
 
       if(raw.match(/^(-?)\d+$/)) // Relative days ago. Future is obviously not supported. Positive and negative values have the same meaning
-        value = Utils.utcDate().subtract(Math.abs(parseInt(raw, 0)), "d");
+        value = Utils.utcDate().subtract(Math.abs(parseInt(raw, 0)), &quot;d&quot;);
       else if(raw.match(/^\d{4}-\d{2}-\d{2}$/)) // Absolute date in the format YYYY-MM-DD.
         value = Utils.utcDate(raw);
 
-      if(value && value.isValid())
+      if(value &amp;&amp; value.isValid())
         return value;
     }
 
-    if(typeof fallback === "number")
-      return Utils.utcDate().subtract(Math.abs(fallback), "d");
+    if(typeof fallback === &quot;number&quot;)
+      return Utils.utcDate().subtract(Math.abs(fallback), &quot;d&quot;);
 
     return fallback;
   }
@@ -173,12 +217,12 @@ class Utils{
    * Parses a timestamp.
    *
    * @param {string} raw The string to parse.
-   * @param {string} [formats=["YYYY-MM-DDTHH:mm:ssZ", "YYYY-MM-DDTHH:mm:ss.SSSZZ"]] A list of format to use for parsing.
+   * @param {string} [formats=[&quot;YYYY-MM-DDTHH:mm:ssZ&quot;, &quot;YYYY-MM-DDTHH:mm:ss.SSSZZ&quot;]] A list of format to use for parsing.
    * @param {boolean} [utc=true] Whether to return the timestamp in UTC timezone.
    * @param {any} [fallback=null] The fallback value to return when parsing fails.
    * @returns {moment} The parsed timestamp.
    */
-  static parseDateTime(raw, formats = ["YYYY-MM-DDTHH:mm:ssZ", "YYYY-MM-DDTHH:mm:ss.SSSZZ"], utc = true, fallback = null){
+  static parseDateTime(raw, formats = [&quot;YYYY-MM-DDTHH:mm:ssZ&quot;, &quot;YYYY-MM-DDTHH:mm:ss.SSSZZ&quot;], utc = true, fallback = null){
     for(let format of formats){ // eslint-disable-line prefer-const
       const value = moment(raw, format);
 
@@ -186,8 +230,8 @@ class Utils{
         return utc ? value.utc() : value;
     }
 
-    if(typeof fallback === "number")
-      return Utils.utcDate().subtract(Math.abs(fallback), "d");
+    if(typeof fallback === &quot;number&quot;)
+      return Utils.utcDate().subtract(Math.abs(fallback), &quot;d&quot;);
 
     return fallback;
   }
@@ -196,10 +240,10 @@ class Utils{
    * Serializes a timestamp as a string.
    *
    * @param {moment} date The timestamp to serialize.
-   * @param {string} [format="YYYY-MM-DDTHH:mm:ssZ"] The format to use.
+   * @param {string} [format=&quot;YYYY-MM-DDTHH:mm:ssZ&quot;] The format to use.
    * @returns {string} The serialized timestamp.
    */
-  static serializeDate(date, format = "YYYY-MM-DDTHH:mm:ssZ"){
+  static serializeDate(date, format = &quot;YYYY-MM-DDTHH:mm:ssZ&quot;){
     return date.utc().format(format);
   }
 
@@ -249,9 +293,9 @@ class Utils{
     end = parseFloat(end, 0);
 
     // Early returns in case of invalids and negatives
-    if(isNaN(start) || isNaN(end) || start < 0 || end < 0)
+    if(isNaN(start) || isNaN(end) || start &lt; 0 || end &lt; 0)
       return [];
-    else if(start > end) // Swap badly ordered arguments
+    else if(start &gt; end) // Swap badly ordered arguments
       [end, start] = [start, end];
 
     // Make integers
@@ -260,7 +304,7 @@ class Utils{
 
     // Generate the range
     const length = end - start + (inclusive ? 1 : 0);
-    return [...Array(length)].map((_, i) => start + i);
+    return [...Array(length)].map((_, i) =&gt; start + i);
   }
 
   /**
@@ -269,8 +313,25 @@ class Utils{
    * @param {any} amount The amount of time to wait before returning, in milliseconds.
    */
   static async delay(amount){
-    await new Promise(resolve => setTimeout(resolve, amount));
+    await new Promise(resolve =&gt; setTimeout(resolve, amount));
   }
 }
 
 module.exports = Utils;
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(0.4.8)</span></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

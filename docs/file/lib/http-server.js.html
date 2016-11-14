@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">lib/http-server.js | API Document</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  
+  
+  <script src="script/manual.js"></script>
+</head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <a data-ice="repoURL" href="https://github.com/ShogunPanda/apes" class="repo-url-github">Repository</a>
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+</header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/application.js~Application.html">Application</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/http-server.js~HTTPServer.html">HTTPServer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/logger.js~Logger.html">Logger</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/runtime-error.js~RuntimeError.html">RuntimeError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/utils.js~Utils.html">Utils</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">lib/http-server.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/*
+ * This file is part of the apes.js npm package. Copyright (C) 2016 and above Shogun &lt;shogun@cowtech.it&gt;.
+ * Licensed under the MIT license, which can be found at http://www.opensource.org/licenses/mit-license.php.
+ */
+
+const fs = require(&quot;fs-extra&quot;);
+const path = require(&quot;path&quot;);
+const http = require(&quot;http&quot;);
+const http2 = require(&quot;http2&quot;);
+const express = require(&quot;express&quot;);
+const compression = require(&quot;compression&quot;);
+const bodyParser = require(&quot;body-parser&quot;);
+const onHeaders = require(&quot;on-headers&quot;);
+const sprintf = require(&quot;sprintf-js&quot;).sprintf;
+
+const Constants = require(&quot;./constants&quot;);
+const Utils = require(&quot;./utils&quot;);
+const Logger = require(&quot;./logger&quot;);
+const Application = require(&quot;./application&quot;);
+
+
+/**
+ * A HTTP server template class.
+ *
+ * @class HTTPServer
+ * @extends {Application}
+ */
+class HTTPServer extends Application{
+  /**
+   * Profiles server and timing informations to the current request.
+   *
+   * @static
+   * @param {express.Request} req The current request.
+   * @param {express.Response} res The current response.
+   * @param {express.NextFunction} next The next middleware.
+   */
+  static profiler(req, res, next){
+    const startTime = process.hrtime();
+    req.startTime = startTime;
+
+    // When sending headers, add the hostname and the response time.
+    onHeaders(res, () =&gt; {
+      const time = process.hrtime(startTime);
+
+      res.append(&quot;X-Served-By&quot;, Application.hostName);
+      res.append(&quot;X-Response-Time&quot;, sprintf(&quot;%0.3fms&quot;, time[0] * Constants.Utils.S_TO_MS + time[1] / Constants.Utils.US_TO_MS));
+    });
+
+    next();
+  }
+
+  /**
+   * Creates a new HTTP server.
+   *
+   * @param {string} [configurationPath=&quot;config/application&quot;] The configuration file path.
+   */
+  constructor(configurationPath = &quot;config/application&quot;){
+    super(configurationPath);
+    this.requestsLogger = new Logger(`${Application.processName}-requests`, !Application.production);
+  }
+
+  /**
+   * Prepares the HTTP server for execution.
+   *
+   * @returns {Promise&lt;winston.Logger|Logger|Error|void&gt;} The current logger in case of success, the error otherwise.
+   */
+  async prepare(){
+    const validJsonBody = Constants.HTTP.VALID_JSON_BODY;
+    this.express = express();
+    this.port = parseInt(process.env.PORT || this.configuration.httpServer.port, 0);
+
+    // Add base middlewares and configure Express
+    this.express.use(this.constructor.profiler);
+
+    // Add GZIP compression and parse JSON body
+    if(Application.production)
+      this.express.use(compression({threshold: 0}));
+
+    this.express.use(bodyParser.json({limit: this.configuration.httpServer.maxBodySize, type: req =&gt; validJsonBody.test(req.header(&quot;Content-Type&quot;))}));
+
+    // Only accept JSON bodies
+    this.express.use(bodyParser.text({limit: this.configuration.httpServer.maxBodySize, type: req =&gt; !(validJsonBody.test(req.header(&quot;Content-Type&quot;)))})); // eslint-disable-line no-extra-parens
+    this.express.use((req, res, next) =&gt; {
+      if(typeof req.body === &quot;string&quot; &amp;&amp; req.body.length)
+        throw new SyntaxError(`Content-Type header must be match regular expression /${validJsonBody.source}/ and the data must a valid encoded JSON.`);
+
+      next();
+    });
+
+    // Configure express behavior
+    this.express.set(&quot;json spaces&quot;, Application.production ? 0 : 2);
+    this.express.enable(&quot;trust proxy&quot;);
+
+    // Diagnostic ping
+    this.express.get(&quot;/ping&quot;, (req, res) =&gt; {
+      res.status(Constants.HTTP.Statuses.OK).set({&quot;Content-Type&quot;: &quot;text/plain&quot;, &quot;X-Up-Time&quot;: `${process.uptime() * Constants.Utils.S_TO_MS}ms`}).end(&quot;pong&quot;);
+    });
+
+    // Add middlewares
+    await this.addMiddlewares();
+
+    // Add routes
+    await this.addRoutes();
+
+    // Add error handling
+    await this.addErrorHandling();
+
+    // Setup logging
+    return this.requestsLogger.prepare();
+  }
+
+  /**
+   * Executes the HTTP server.
+   *
+   * @returns {void|Error} Nothing in case of success, the error otherwise.
+   */
+  execute(){
+    return new Promise((resolve, reject) =&gt; {
+      const sockets = new Set();
+
+      // Create a HTTP(s) server - In non development we always start in HTTP since HTTPS is handled by Nginx
+      const useSSL = (process.env.SSL || this.configuration.httpServer.ssl.enabled) &amp;&amp; !Application.production;
+      this.server = useSSL ? http2.createServer(this.sslConfig(), this.express) : http.createServer(this.express);
+
+      // Listen to the port
+      this.server.listen(this.configuration.httpServer.port, () =&gt; {
+        this.logger.info(`Listening using HTTP${useSSL ? &quot;2&quot; : &quot;&quot;} on port ${this.configuration.httpServer.port}.`);
+      });
+
+      // Error handling
+      this.server.on(&quot;error&quot;, reject);
+
+      // Socket tracking to allow to force a shutdown - Otherwise server.close will wait for connection to end.
+      this.server.on(&quot;connection&quot;, socket =&gt; {
+        sockets.add(socket);
+        socket.on(&quot;close&quot;, () =&gt; sockets.delete(socket));
+      });
+
+      // Handle termination signals
+      for(let signal of [&quot;SIGTERM&quot;, &quot;SIGINT&quot;, &quot;SIGUSR2&quot;]){ // eslint-disable-line prefer-const
+        process.removeAllListeners(signal);
+        process.on(signal, () =&gt; {
+          // Terminate all pending sockets
+          for(let socket of sockets) // eslint-disable-line prefer-const
+            socket.destroy();
+
+          // Terminate the server and exit
+          this.server.close(error =&gt; { // eslint-disable-line arrow-body-style
+            return error ? reject(error) : resolve();
+          });
+        });
+      }
+    });
+  }
+
+  /**
+   * Adds middleware to the Express server. This is reserved for subclasses to override. Default implementation does nothing.
+   */
+  addMiddlewares(){ // eslint-disable-line class-methods-use-this
+    // Default implementation is a no-op since it&apos;s optional
+  }
+
+  /**
+   * Adds routes to the Express server. This is reserved for subclasses to override. Default implementation does nothing.
+   *
+   * @returns {Promise&lt;winston.Logger&gt;|Error} The backend in case of success, the error otherwise.
+   */
+  addRoutes(){
+    return this.logger.warn(`${this.constructor.name}.addRoutes should override HTTP.Server.addRoutes.`);
+  }
+
+  /**
+   * Adds error handling to the Express server.
+   */
+  addErrorHandling(){
+    // Default catch all and error handler
+    this.express.use((req, res) =&gt; {
+      this.sendGeneralError(req, res, Constants.HTTP.Statuses.NOT_FOUND, &quot;Not Found.&quot;);
+    });
+
+    // Error handler for unhandled exceptions
+    this.express.use(this.errorHandler.bind(this));
+  }
+
+  /**
+   * Adds CORS handling to the Express server.
+   *
+   * @param {string} origin A value for the `Access-Control-Allow-Origin` header. If not provided, will be inferred by requests&apos; `Origin` header.
+   * @param {string} headers A value for `Access-Control-Allow-Headers` header. If not provided, `*` will be used.
+   * @param {string} methods A value for `Access-Control-Allow-Methods` header. If not provided, only **GET** and **POST** methods will be allowed.
+   * @param {string} maxAge A value for `Access-Control-Max-Age` header. If not provided, one **year** will be used.
+   */
+  addCORSHandling(origin, headers, methods, maxAge){
+    this.express.use((req, res, next) =&gt; {
+      const allowedOrigin = origin || req.header(&quot;Origin&quot;);
+
+      if(allowedOrigin){
+        res.set({
+          &quot;Access-Control-Allow-Origin&quot;: req.header(&quot;Origin&quot;) || origin,
+          &quot;Access-Control-Allow-Headers&quot;: headers || &quot;*&quot;,
+          &quot;Access-Control-Allow-Methods&quot;: methods || &quot;GET, POST&quot;,
+          &quot;Access-Control-Max-Age&quot;: (maxAge || Constants.HTTP.DEFAULT_CORS_MAX_AGE).toString()
+        });
+      }
+
+      next();
+    });
+
+    this.express.options(&quot;/:unused*?&quot;, (req, res) =&gt; {
+      res.status(Constants.HTTP.Statuses.NO_CONTENT).end();
+    });
+  }
+
+  /**
+   * Configures Express static file serving.
+   *
+   * @param {string} dir The folder to use as root for static files.
+   * @param {string} root The base folder to get a absolute path for `dir`.
+   * @returns {string} The absolute static files folder.
+   */
+  setupStaticFolder(dir, root = null){
+    const final = path.resolve(root || Application.root, dir);
+    this.express.use(express.static(final));
+    return final;
+  }
+
+  /**
+   * Loads and parses the configuration file.
+   */
+  async loadConfiguration(){
+    await super.loadConfiguration();
+    this.sanitizeConfiguration();
+  }
+
+  /**
+   * Sanitizes the configuration.
+   *
+   * @returns {object} The server configuration.
+   */
+  sanitizeConfiguration(){
+    if(!this.configuration.httpServer)
+      this.configuration.httpServer = {};
+
+    if(!this.configuration.httpServer.port)
+      this.configuration.httpServer.port = this.constructor.defaultPort;
+
+    if(!this.configuration.httpServer.ssl)
+      this.configuration.httpServer.ssl = {enabled: false};
+
+    return this.configuration;
+  }
+
+  /**
+   * Load SSL certificate and key for HTTPS servers.
+   *
+   * @returns {{key: Buffer, cert: Buffer}} The loaded certificates.
+   */
+  sslConfig(){
+    return {
+      key: fs.readFileSync(path.resolve(Application.root, this.configuration.httpServer.ssl.key || &quot;config/ssl/private-key.pem&quot;)), // eslint-disable-line no-sync
+      cert: fs.readFileSync(path.resolve(Application.root, this.configuration.httpServer.ssl.certificate || &quot;config/ssl/certificate.pem&quot;)) // eslint-disable-line no-sync
+    };
+  }
+
+  /**
+   * Replies with a HTTP redirect response to the client.
+   *
+   * @param {express.Request} req The current Express request.
+   * @param {express.Response} res The current Express response.
+   * @param {number} code The HTTP redirect code to use. Defaults to `302`.
+   * @param {string} destination The URL where redirect to.
+   * @param {number[]} startTime The starting time of the request, as returned by `process.hrtime()`.
+   */
+  redirectTo(req, res, code, destination, startTime){
+    if(!startTime)
+      startTime = req.startTime || process.hrtime();
+
+    if(!code)
+      code = Constants.HTTP.Statuses.FOUND;
+
+    this.logRequest(code, req, startTime);
+    res.redirect(code, destination);
+  }
+
+  /**
+   * Sends a response back to the client.
+   *
+   * @param {express.Request} req The current Express request.
+   * @param {express.Response} res The current Express response.
+   * @param {number} code The HTTP response code to use. Defaults to `200`.
+   * @param {any} content The data to send back. Strings will set type to be `text/plain`, otherwise `application/json` will be used.
+   * @param {number[]} startTime The starting time of the request, as returned by `process.hrtime()`.
+   * @returns {void}
+   */
+  sendResponse(req, res, code, content, startTime = null){
+    if(!startTime)
+      startTime = req.startTime || process.hrtime();
+
+    if(!code)
+      code = Constants.HTTP.Statuses.OK;
+
+    this.logRequest(code, req, startTime);
+    res.status(code);
+
+    if(typeof content === &quot;string&quot;)
+      res.type(&quot;text&quot;);
+
+    return content !== null &amp;&amp; typeof content !== &quot;undefined&quot; ? res.send(content) : res.end();
+  }
+
+  /**
+   * Sends a error response back to the client.
+   *
+   * @param {express.Request} req The current Express request.
+   * @param {express.Response} res The current Express response.
+   * @param {number} code The HTTP response code to use. Defaults to `200`.
+   * @param {string} message The error message to send back.
+   * @param {boolean} single If `true`, error will be wrapped in a `error` key, otherwise it will be wrapped in `errors` key.
+   * @returns {void}
+   */
+  sendGeneralError(req, res, code, message, single = false){
+    const body = typeof message === &quot;object&quot; ? Object.assign(message, {code}) : {code, message};
+    return this.sendResponse(req, res, code, single ? {error: body} : {errors: [body]});
+  }
+
+  /**
+   * The Express catch all error handler.
+   *
+   * @param {Error | string} error The occurred error.
+   * @param {express.Request} req The current Express request.
+   * @param {express.Response} res The current Express response.
+   * @param {express.NextFunction} next The next middleware. This is to comply with Express API, but the middleware is never called.
+   * @returns {void}
+   */
+  errorHandler(error, req, res, next){ // eslint-disable-line no-unused-vars
+    const errorStatusCode = Constants.HTTP.Statuses.ERROR;
+
+    if(res.headersSent)
+      return false;
+
+    if(error instanceof SyntaxError &amp;&amp; req.method === &quot;POST&quot;){ // This is a malformed JSON POST body
+      return res.status(Constants.HTTP.Statuses.BAD_REQUEST).json({
+        errors: [{
+          code: Constants.HTTP.Statuses.BAD_REQUEST,
+          message: &quot;Invalid JSON POST data received.&quot;,
+          error: error.message
+        }]
+      });
+    }
+
+    // Log the error
+    this.logger.error(error);
+
+    // On production show a generic message
+    if(Application.production)
+      return this.sendGeneralError(req, res, errorStatusCode, &quot;Internal Application Error.&quot;);
+
+    // If it&apos;s a string, don&apos;t try to get type and stack
+    if(typeof error === &quot;string&quot;)
+      return this.sendGeneralError(req, res, errorStatusCode, error);
+
+    // Format stack
+    const stack = error.stack ? error.stack.split(&quot;\n&quot;) : [];
+    stack.shift();
+
+    return this.sendResponse(req, res, errorStatusCode, {type: error.name, message: error.message, stack: stack.map(s =&gt; s.trim().replace(/^at\s/, &quot;&quot;))});
+  }
+
+  /**
+   * Logs a request using the requestsLogger.
+   *
+   * @param {number} code The HTTP code sent to the client.
+   * @param {express.Request} req The current Express request.
+   * @param {number[]} startTime The starting time of the request, as returned by `process.hrtime()`.
+   * @returns {winston.Logger} The requestsLogger backend.
+   */
+  logRequest(code, req, startTime){
+    let method = null;
+
+    switch(Math.floor(code / Constants.HTTP.StatusClasses.SEPARATOR)){
+      case Constants.HTTP.StatusClasses.CLIENT_ERROR:
+        method = &quot;warn&quot;;
+        break;
+      case Constants.HTTP.StatusClasses.SERVER_ERROR:
+        method = &quot;error&quot;;
+        break;
+      case Constants.HTTP.StatusClasses.REDIRECT:
+        method = &quot;debug&quot;;
+        break;
+      default:
+        method = &quot;info&quot;;
+        break;
+    }
+
+    return this.requestsLogger[method](Object.assign(
+      {
+        status: code,
+        elapsed: Utils.elapsedTime(startTime),
+        ip: req.ip.replace(/^::ffff:/, &quot;&quot;),
+        method: req.method,
+        url: req.url
+      },
+      req.method === &quot;POST&quot; &amp;&amp; !Application.production ? {body: req.body} : {},
+      req.extraLogAttributes || {}
+    ));
+  }
+}
+
+HTTPServer.defaultPort = 21080;
+
+/**
+  @module {HTTP}
+ */
+module.exports = HTTPServer;
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(0.4.8)</span></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

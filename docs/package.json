@@ -16,7 +16,8 @@
     "lint": "./node_modules/.bin/eslint lib test",
     "coverage": "./node_modules/.bin/nyc npm run ci-test",
     "cleanup": "rm -rf .nyc_output coverage log",
-    "travis-ci": "./node_modules/.bin/nyc --reporter=text-lcov npm run ci-test | ./node_modules/coveralls/bin/coveralls.js",
+    "preci": "mkdir -p coverage",
+    "ci": "./node_modules/.bin/mocha --recursive -r babel-register -R mocha-bamboo-reporter --reporter-options output=coverage/bamboo.json",
     "docs": "esdoc -c .esdoc.json",
     "postpublish": "git push origin && git push origin -f --tags"
   },

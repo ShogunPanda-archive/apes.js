@@ -1,0 +1,31 @@
+{
+  "env1": {
+    "port": 123,
+    "useragent": "AGENT1"
+  },
+  "env2": {
+    "port": 465,
+    "useragent": "AGENT2"
+  },
+  "server1": {
+    "httpServer": {
+      "port": 1,
+      "ssl": {
+        "enabled": "A",
+        "key": "B",
+        "certificate": "C"
+      }
+    }
+  },
+  "server2": {
+    "httpServer": {
+      "port": 1,
+      "ssl": {
+        "enabled": "A",
+        "key": "B",
+        "certificate": "C"
+      }
+    }
+  },
+  "server3": {}
+}

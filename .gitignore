@@ -1,6 +1,16 @@
-.idea
-node_modules/
-coverage/
+# Local configuration
+/config/
 log/
-test/log/
+
+# NPM
+node_modules/
 npm-debug.log
+
+# Coverage and NPM
+.nyc_output/
+coverage/
+
+# IDEs
+.idea/
+.vscode/
+.history/

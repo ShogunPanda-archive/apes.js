@@ -1,1 +1,1 @@
---compilers ts:ts-node/register
+--recursive --harmony-async-await -s 300

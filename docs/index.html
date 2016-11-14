@@ -1,64 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="utf-8">
-    <title>Home - Documentation</title>
-
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+  <meta charset="utf-8">
+  <base data-ice="baseUrl">
+  <title data-ice="title">API Document</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  
+  
+  <script src="script/manual.js"></script>
 </head>
-<body>
+<body class="layout-container" data-ice="rootContainer">
 
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <a data-ice="repoURL" href="https://github.com/ShogunPanda/apes" class="repo-url-github">Repository</a>
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+</header>
 
-<label for="nav-trigger" class="overlay"></label>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Application.html">Application</a><ul class='methods'><li data-type='method'><a href="Application.html#cleanup">cleanup</a></li><li data-type='method'><a href="Application.html#execute">execute</a></li><li data-type='method'><a href="Application.html#loadConfiguration">loadConfiguration</a></li><li data-type='method'><a href="Application.html#prepare">prepare</a></li><li data-type='method'><a href="Application.html#run">run</a></li></ul></li><li><a href="Logger.html">Logger</a><ul class='methods'><li data-type='method'><a href="Logger.html#debug">debug</a></li><li data-type='method'><a href="Logger.html#error">error</a></li><li data-type='method'><a href="Logger.html#fatal">fatal</a></li><li data-type='method'><a href="Logger.html#info">info</a></li><li data-type='method'><a href="Logger.html#prepare">prepare</a></li><li data-type='method'><a href="Logger.html#warn">warn</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="Utils.html">Utils</a><ul class='methods'><li data-type='method'><a href="Utils.html#.decodeBase64">decodeBase64</a></li><li data-type='method'><a href="Utils.html#.elapsedTime">elapsedTime</a></li><li data-type='method'><a href="Utils.html#.encodeBase64">encodeBase64</a></li><li data-type='method'><a href="Utils.html#.md5">md5</a></li><li data-type='method'><a href="Utils.html#.parseBoolean">parseBoolean</a></li></ul></li><li>{<a href="global.html#HTTP">HTTP</a>}</li></ul><h3>Global</h3><ul><li><a href="global.html#HTTP">HTTP</a></li></ul>
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/application.js~Application.html">Application</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/http-server.js~HTTPServer.html">HTTPServer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/logger.js~Logger.html">Logger</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/runtime-error.js~RuntimeError.html">RuntimeError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/utils.js~Utils.html">Utils</a></span></span></li>
+</ul>
+</div>
 </nav>
 
-<div id="main">
-    
-
-    
-
-
-
-    
-
-
-
-
-
-
-
-
-
-    
-
-
-    <section class="readme">
-        <article><h1>apes.js</h1><p><a href="http://badge.fury.io/js/apes"><img src="https://badge.fury.io/js/apes.png" alt="Package Version"></a>
+<div class="content" data-ice="content"><div data-ice="index" class="github-markdown"><h1 id="apes-js">apes.js</h1>
+<p><a href="http://badge.fury.io/js/apes"><img src="https://badge.fury.io/js/apes.png" alt="Package Version"></a>
 <a href="https://gemnasium.com/ShogunPanda/apes.js"><img src="https://gemnasium.com/ShogunPanda/apes.js.png?travis" alt="Dependency Status"></a>
 <a href="http://travis-ci.org/ShogunPanda/apes.js"><img src="https://secure.travis-ci.org/ShogunPanda/apes.js.png?branch=master" alt="Build Status"></a>
 <a href="https://coveralls.io/github/ShogunPanda/apes.js?branch=master"><img src="https://coveralls.io/repos/github/ShogunPanda/apes.js/badge.svg?branch=master" alt="Coverage Status"></a></p>
 <p>A tiny application and HTTP API framework for Express.js.</p>
-<p>https://sw.cowtech.it/apes.js</p>
-<h2>Supported implementations.</h2><p>apes.js is written in <a href="https://typescriptlang.org">TypeScript</a>. </p>
-<p>It can be used in TypeScript (using Typescript 2.0) or simply in plain Javacript.</p>
-<p>It supports and has been tested on <a href="http://nodejs.org">NodeJS</a> 6.0+.</p>
-<h2>Usage</h2><h3>Standalone application</h3><p>To create a Node.js application which already takes care of logging, extend the <code>Application</code> class and override its <code>prepare</code>, <code>execute</code> and <code>cleanup</code> methods.</p>
-<p>Then, instantiate the class and call it's <code>run</code> method.</p>
-<pre class="prettyprint source lang-javascript"><code>const apes = require(&quot;apes&quot;);
+<p><a href="https://sw.cowtech.it/apes.js">https://sw.cowtech.it/apes.js</a></p>
+<h2 id="supported-implementations-">Supported implementations.</h2>
+<p>apes.js is written using async/await, which is available from Node 7.0.0 using <code>--harmony-async-await</code> flag.</p>
+<p>It supports and has been tested on <a href="http://nodejs.org">NodeJS</a> 7.0+, using <code>--harmony-async-await</code> for async/await support.</p>
+<h2 id="usage">Usage</h2>
+<h3 id="standalone-application">Standalone application</h3>
+<p>To create a Node.js application which already takes care of logging, extend the <code>Application</code> class and override its <code>prepare</code>, <code>execute</code> and <code>cleanup</code> methods.</p>
+<p>Then, instantiate the class and call it&apos;s <code>run</code> method.</p>
+<pre><code class="lang-javascript"><code class="source-code prettyprint">const apes = require(&quot;apes&quot;);
 
 class CustomApplication extends apes.Application{
   prepare(){
@@ -74,9 +71,12 @@ class CustomApplication extends apes.Application{
   }
 }
 
-new CustomApplication().run();</code></pre><h3>HTTP Server</h3><p>To create a fully working light-weight HTTP server, extend the <code>HTTPServer</code> class and override its <code>addRoutes</code> and <code>addMiddlewares</code> methods.</p>
-<p>Then, instantiate the class and call it's <code>run</code> method.</p>
-<pre class="prettyprint source lang-javascript"><code>const apes = require(&quot;apes&quot;);
+new CustomApplication().run();</code>
+</code></pre>
+<h3 id="http-server">HTTP Server</h3>
+<p>To create a fully working light-weight HTTP server, extend the <code>HTTPServer</code> class and override its <code>addRoutes</code> and <code>addMiddlewares</code> methods.</p>
+<p>Then, instantiate the class and call it&apos;s <code>run</code> method.</p>
+<pre><code class="lang-javascript"><code class="source-code prettyprint">const apes = require(&quot;apes&quot;);
 
 class CustomServer extends apes.HTTP.Server{
   addRoutes(){
@@ -88,33 +88,35 @@ class CustomServer extends apes.HTTP.Server{
   }
 }
 
-new CustomServer().run();</code></pre><h2>API Documentation</h2><p>The API documentation can be found <a href="https://shogunpanda.github.io/apes.js">here</a>.</p>
-<h2>Contributing to apes.js</h2><ul>
-<li>Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.</li>
-<li>Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.</li>
+new CustomServer().run();</code>
+</code></pre>
+<h2 id="api-documentation">API Documentation</h2>
+<p>The API documentation can be found <a href="https://shogunpanda.github.io/apes.js">here</a>.</p>
+<h2 id="contributing-to-apes-js">Contributing to apes.js</h2>
+<ul>
+<li>Check out the latest master to make sure the feature hasn&apos;t been implemented or the bug hasn&apos;t been fixed yet.</li>
+<li>Check out the issue tracker to make sure someone already hasn&apos;t requested it and/or contributed it.</li>
 <li>Fork the project.</li>
 <li>Start a feature/bugfix branch.</li>
 <li>Commit and push until you are happy with your contribution.</li>
-<li>Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.</li>
+<li>Make sure to add tests for it. This is important so I don&apos;t break it in a future version unintentionally.</li>
 </ul>
-<h2>Copyright</h2><p>Copyright (C) 2016 and above Shogun <a href="&#109;&#97;&#105;&#x6c;&#x74;&#111;&#58;&#115;&#104;&#x6f;&#x67;&#x75;&#x6e;&#x40;&#x63;&#x6f;&#119;&#x74;&#x65;&#99;&#104;&#46;&#x69;&#x74;">&#115;&#104;&#x6f;&#x67;&#x75;&#x6e;&#x40;&#x63;&#x6f;&#119;&#x74;&#x65;&#99;&#104;&#46;&#x69;&#x74;</a>.</p>
-<p>Licensed under the MIT license, which can be found at http://opensource.org/licenses/MIT.</p></article>
-    </section>
-
-
-
-
-
-
+<h2 id="copyright">Copyright</h2>
+<p>Copyright (C) 2016 and above Shogun <a href="mailto:shogun@cowtech.it">shogun@cowtech.it</a>.</p>
+<p>Licensed under the MIT license, which can be found at <a href="http://opensource.org/licenses/MIT">http://opensource.org/licenses/MIT</a>.</p>
+</div>
 </div>
 
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.1</a> on Mon Sep 26 2016 09:23:51 GMT+0200 (CEST) using the Minami theme.
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(0.4.8)</span></a>
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
 </body>
 </html>
