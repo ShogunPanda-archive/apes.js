@@ -1,3 +1,7 @@
+### 2016-11-14 / 0.6.2
+
+* Replace `http2` with `spdy` for HTTP2 support.
+
 ### 2016-11-14 / 0.6.1
 
 * Minor export fixes.

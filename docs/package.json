@@ -1,7 +1,7 @@
 {
   "name": "apes",
   "label": "Apes",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "description": "A tiny application and HTTP API framework for Express.js.",
   "main": "lib/main",
   "files": [
@@ -16,8 +16,7 @@
     "lint": "./node_modules/.bin/eslint lib test",
     "coverage": "./node_modules/.bin/nyc npm run ci-test",
     "cleanup": "rm -rf .nyc_output coverage log",
-    "preci": "mkdir -p coverage",
-    "ci": "./node_modules/.bin/mocha --recursive -r babel-register -R mocha-bamboo-reporter --reporter-options output=coverage/bamboo.json",
+    "travis-ci": "./node_modules/.bin/nyc --reporter=text-lcov npm run ci-test | ./node_modules/coveralls/bin/coveralls.js",
     "docs": "esdoc -c .esdoc.json",
     "postpublish": "git push origin && git push origin -f --tags"
   },
@@ -38,10 +37,10 @@
     "compression": "~1.6.2",
     "express": "~4.14.0",
     "fs-extra": "~1.0.0",
-    "http2": "~3.3.6",
     "moment": "~2.16.0",
     "on-headers": "~1.0.1",
     "serve-static": "~1.11.1",
+    "spdy": "~3.4.4",
     "sprintf-js": "~1.0.3",
     "winston": "~2.3.0"
   },
@@ -51,8 +50,8 @@
     "chai-http": "~3.0.0",
     "chai-moment": "~0.1.0",
     "coveralls": "~2.11.14",
-    "esdoc": "next",
-    "esdoc-es7-plugin": "^0.0.3",
+    "esdoc": "~0.4.8",
+    "esdoc-es7-plugin": "~0.0.3",
     "eslint": "~3.9.1",
     "mocha": "~3.1.0",
     "nock": "~9.0.2",

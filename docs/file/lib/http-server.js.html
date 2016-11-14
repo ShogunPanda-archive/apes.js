@@ -50,7 +50,7 @@
 const fs = require(&quot;fs-extra&quot;);
 const path = require(&quot;path&quot;);
 const http = require(&quot;http&quot;);
-const http2 = require(&quot;http2&quot;);
+const spdy = require(&quot;spdy&quot;);
 const express = require(&quot;express&quot;);
 const compression = require(&quot;compression&quot;);
 const bodyParser = require(&quot;body-parser&quot;);
@@ -164,7 +164,7 @@ class HTTPServer extends Application{
 
       // Create a HTTP(s) server - In non development we always start in HTTP since HTTPS is handled by Nginx
       const useSSL = (process.env.SSL || this.configuration.httpServer.ssl.enabled) &amp;&amp; !Application.production;
-      this.server = useSSL ? http2.createServer(this.sslConfig(), this.express) : http.createServer(this.express);
+      this.server = useSSL ? spdy.createServer(this.sslConfig(), this.express) : http.createServer(this.express);
 
       // Listen to the port
       this.server.listen(this.configuration.httpServer.port, () =&gt; {

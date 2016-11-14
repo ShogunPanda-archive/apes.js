@@ -148,7 +148,7 @@ class Logger{
    */
 
   fatal(...args){
-    return this.backend.errorAsync(...args).then(() =&gt; process.exit(1));
+    return this.backend.errorAsync(...args).then(() =&gt; process.exit(1)); // eslint-disable-line no-process-exit
   }
 
   /**
