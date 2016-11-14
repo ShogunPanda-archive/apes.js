@@ -1,3 +1,7 @@
+### 2016-11-14 / 0.6.1
+
+* Minor export fixes.
+
 ### 2016-11-14 / 0.6.0
 
 * Rewritten in plain ES2017, dropping support for Node.js < 6.
