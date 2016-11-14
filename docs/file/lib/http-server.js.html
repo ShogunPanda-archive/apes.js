@@ -230,18 +230,18 @@ class HTTPServer extends Application{
    * Adds CORS handling to the Express server.
    *
    * @param {string} origin A value for the `Access-Control-Allow-Origin` header. If not provided, will be inferred by requests&apos; `Origin` header.
-   * @param {string} headers A value for `Access-Control-Allow-Headers` header. If not provided, `*` will be used.
+   * @param {string} headers A value for `Access-Control-Allow-Headers` header. If not provided, `Content-Type` will be used.
    * @param {string} methods A value for `Access-Control-Allow-Methods` header. If not provided, only **GET** and **POST** methods will be allowed.
    * @param {string} maxAge A value for `Access-Control-Max-Age` header. If not provided, one **year** will be used.
    */
   addCORSHandling(origin, headers, methods, maxAge){
     this.express.use((req, res, next) =&gt; {
-      const allowedOrigin = origin || req.header(&quot;Origin&quot;);
+      const allowedOrigin = origin || req.header(&quot;Origin&quot;) || req.header(&quot;origin&quot;);
 
       if(allowedOrigin){
         res.set({
-          &quot;Access-Control-Allow-Origin&quot;: req.header(&quot;Origin&quot;) || origin,
-          &quot;Access-Control-Allow-Headers&quot;: headers || &quot;*&quot;,
+          &quot;Access-Control-Allow-Origin&quot;: allowedOrigin,
+          &quot;Access-Control-Allow-Headers&quot;: headers || &quot;Content-Type&quot;,
           &quot;Access-Control-Allow-Methods&quot;: methods || &quot;GET, POST&quot;,
           &quot;Access-Control-Max-Age&quot;: (maxAge || Constants.HTTP.DEFAULT_CORS_MAX_AGE).toString()
         });

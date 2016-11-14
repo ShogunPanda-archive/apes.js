@@ -250,7 +250,7 @@ describe("HTTPServer", function(){
         chai.request(this.subject.express).options("/foo").then(response => {
           expect(response).to.have.status(204);
           expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
-          expect(response).to.have.header("Access-Control-Allow-Headers", "*");
+          expect(response).to.have.header("Access-Control-Allow-Headers", "Content-Type");
           expect(response).to.have.header("Access-Control-Allow-Methods", "GET, POST");
           expect(response).to.have.header("Access-Control-Max-Age", "31536000");
           expect(response.body).to.eql({});
