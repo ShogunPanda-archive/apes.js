@@ -1,9 +1,9 @@
 {
   "name": "apes",
   "label": "Apes",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "A tiny application and HTTP API framework for Express.js.",
-  "main": "lib/main",
+  "main": "lib/main.js",
   "files": [
     "lib",
     "README.md",
