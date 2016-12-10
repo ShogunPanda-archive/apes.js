@@ -3,7 +3,7 @@
   "label": "Apes",
   "version": "0.6.4",
   "description": "A tiny application and HTTP API framework for Express.js.",
-  "main": "lib/main.js",
+  "main": "./lib/main.js",
   "files": [
     "lib",
     "README.md",
