@@ -125,7 +125,7 @@ describe("HTTPServer", function(){
         await HTTPServer.create(application, null, null, "none");
       }catch(error){
         expect(errorStub.calledWith(
-          'Cannot load HTTP Server configuration: TypeError: The value of the key "apes-tests-http-server.none" in package.json must be a object.. Exiting ...'
+          'Cannot create the HTTP Server: TypeError: The value of the key "apes-tests-http-server.none" in package.json must be a object.. Exiting ...'
         )).to.be.ok;
       }
     });
@@ -705,7 +705,7 @@ describe("HTTPServer", function(){
       const application = Application.create("apes-tests-http-server");
       const configuration = {ssl: {enabled: true, key: "test/fixtures/ssl/server.key", certificate: "test/fixtures/ssl/server.crt"}};
 
-      expect(HTTPServer._loadSSL({application, configuration})).to.eql({
+      expect(HTTPServer._loadSSL(application, configuration)).to.eql({
         key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.key")),
         cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.crt"))
       });
@@ -717,7 +717,7 @@ describe("HTTPServer", function(){
 
       application.root = path.resolve(application.root, "test/fixtures");
 
-      expect(HTTPServer._loadSSL({application, configuration})).to.eql({
+      expect(HTTPServer._loadSSL(application, configuration)).to.eql({
         key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/config/ssl/private-key.pem")),
         cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/config/ssl/certificate.pem"))
       });
