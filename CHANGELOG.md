@@ -1,3 +1,7 @@
+### 2016-12-14 / 0.7.5
+
+* Handle HTTP server creation errors.
+
 ### 2016-12-14 / 0.7.4
 
 * Handle HTTP server configuration errors.
