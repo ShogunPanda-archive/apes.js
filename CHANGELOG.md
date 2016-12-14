@@ -1,3 +1,7 @@
+### 2016-12-14 / 0.7.1
+
+* Allow multiple dots in `HTTPServer.execute` for the `configurationRoot` parameter.
+
 ### 2016-12-14 / 0.7.0
 
 * Completely rewritten without classes to ease functional programming approach.

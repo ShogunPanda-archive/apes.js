@@ -65,6 +65,18 @@ describe("HTTPServer", function(){
       expect(createStub.calledWith("apes", null)).to.be.ok;
       expect(runStub.calledWith(sinon.match.object)).to.be.ok;
     });
+
+    it("should correctly parse the package.json", async function(){
+      const applicationCreateStub = this.sandbox.stub(Application, "create").returns("APPLICATION");
+      const serverCreateStub = this.sandbox.stub(HTTPServer, "create").resolves("SERVER");
+      this.sandbox.stub(Application, "run").resolves("OK");
+
+      this.sandbox.stub(Application, "loadConfiguration").returns({httpServer: {}});
+
+      expect(await HTTPServer.execute("it.apes.other.http", "MAIN")).to.eql("OK");
+      expect(applicationCreateStub.calledWith("it.apes.other", null)).to.be.ok;
+      expect(serverCreateStub.calledWith("APPLICATION", "MAIN", null, "http")).to.be.ok;
+    });
   });
 
   describe(".create", function(){
