@@ -1,3 +1,7 @@
+### 2016-12-14 / 0.7.3
+
+* Re-add dependency removed by mistake.
+
 ### 2016-12-14 / 0.7.2
 
 * Update depedencies.
