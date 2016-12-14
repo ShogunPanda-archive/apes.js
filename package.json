@@ -15,6 +15,7 @@
     "ci-test": "./node_modules/.bin/mocha -R dot",
     "lint": "./node_modules/.bin/eslint lib test",
     "coverage": "./node_modules/.bin/nyc npm run ci-test",
+    "sanity": "npm run lint && npm run coverage && npm run docs",
     "cleanup": "rm -rf .nyc_output coverage log",
     "travis-ci": "./node_modules/.bin/nyc --reporter=text-lcov npm run ci-test | ./node_modules/coveralls/bin/coveralls.js",
     "docs": "jsdoc -c .jsdoc.json",
