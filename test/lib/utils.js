@@ -228,7 +228,7 @@ describe("Utils", function(){
   describe(".delay", function(){
     it("should wait the right amount of time", async function(){
       const time = process.hrtime();
-      Utils.delay(25);
+      await Utils.delay(25);
       expect(process.hrtime(time)[1]).to.be.greaterThan(25E3);
     });
   });

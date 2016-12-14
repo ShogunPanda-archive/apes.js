@@ -1,3 +1,7 @@
+### 2016-12-14 / 0.7.2
+
+* Update depedencies.
+
 ### 2016-12-14 / 0.7.1
 
 * Allow multiple dots in `HTTPServer.execute` for the `configurationRoot` parameter.
