@@ -1,7 +1,7 @@
 {
   "name": "apes",
   "label": "Apes",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "A tiny application and HTTP API framework for Express.js.",
   "main": "./index.js",
   "files": [
