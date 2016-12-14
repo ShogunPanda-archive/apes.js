@@ -1,9 +1,0 @@
-{
-  "source": "./lib",
-  "destination": "./docs",
-  "unexportIdentifier": true,
-  "undocumentIdentifier": false,
-  "plugins": [
-    {"name": "esdoc-es7-plugin"}
-  ]
-}

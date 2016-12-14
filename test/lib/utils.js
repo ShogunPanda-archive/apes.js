@@ -128,6 +128,25 @@ describe("Utils", function(){
     });
   });
 
+  describe(".utcDate", function(){
+    beforeEach(function(){
+      timeKeeper.freeze(new Date(2016, 7, 2));
+    });
+
+    afterEach(function(){
+      timeKeeper.reset();
+    });
+
+    it("should return today's date as UTC midnight", function(){
+      expect(Utils.utcDate()).to.be.sameMoment(moment.utc("2016-08-02"));
+    });
+
+    it("should return a date as UTC midnight", function(){
+      expect(Utils.utcDate("2016-05-04")).to.be.sameMoment(moment.utc("2016-05-04"));
+      expect(Utils.utcDate("2012-03-04")).to.be.sameMoment(moment.utc("2012-03-04"));
+    });
+  });
+
   describe(".serializeDate", function(){
     it("should correctly serialize dates", function(){
       expect(Utils.serializeDate(moment.utc("2016-12-26 12:34:56"))).to.equal("2016-12-26T12:34:56+00:00");
@@ -211,6 +230,31 @@ describe("Utils", function(){
       const time = process.hrtime();
       Utils.delay(25);
       expect(process.hrtime(time)[1]).to.be.greaterThan(25E3);
+    });
+  });
+
+  describe(".clone", function(){
+    it("should clone a object, deeply and excluding functions", function(){
+      let original = null;
+      expect(Utils.clone(original)).to.eq(original);
+
+      original = 1;
+      expect(Utils.clone(original)).to.eq(original);
+
+      original = "123";
+      expect(Utils.clone(original)).to.eq(original);
+
+      original = {a: [1, 2, 3], b: 1};
+      expect(Utils.clone(original)).to.eql(original);
+
+      const clone = Utils.clone(original);
+      clone.b = 2;
+      clone.a[2] = 4;
+      original.foo = () => false;
+
+      expect(original.b).to.eql(1);
+      expect(original.a[2]).to.eql(3);
+      expect(clone.foo).not.to.be.a("function");
     });
   });
 });

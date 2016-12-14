@@ -2,11 +2,17 @@
   "source": {
     "include": ["lib"]
   },
-  "plugins": ["plugins/markdown"],
+  "plugins": ["plugins/markdown", "node_modules/jsdoc-strip-async-await"],
   "opts": {
+    "verbose": true,
     "encoding": "utf8",
     "destination": "./docs/",
     "recurse": true,
-    "readme": "README.md"
+    "readme": "README.md",
+    "template": "node_modules/jaguarjs-jsdoc"
+  },
+  "templates": {
+    "applicationName": "apes.js",
+    "useLongnameInNav": true
   }
 }

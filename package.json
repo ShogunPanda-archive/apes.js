@@ -1,9 +1,9 @@
 {
   "name": "apes",
   "label": "Apes",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "description": "A tiny application and HTTP API framework for Express.js.",
-  "main": "./lib/main.js",
+  "main": "./index.js",
   "files": [
     "lib",
     "README.md",
@@ -17,7 +17,7 @@
     "coverage": "./node_modules/.bin/nyc npm run ci-test",
     "cleanup": "rm -rf .nyc_output coverage log",
     "travis-ci": "./node_modules/.bin/nyc --reporter=text-lcov npm run ci-test | ./node_modules/coveralls/bin/coveralls.js",
-    "docs": "esdoc -c .esdoc.json",
+    "docs": "jsdoc -c .jsdoc.json",
     "postpublish": "git push origin && git push origin -f --tags"
   },
   "repository": {
@@ -46,15 +46,14 @@
   },
   "devDependencies": {
     "chai": "~3.5.0",
-    "chai-as-promised": "~6.0.0",
     "chai-http": "~3.0.0",
     "chai-moment": "~0.1.0",
     "coveralls": "~2.11.14",
-    "esdoc": "~0.4.8",
-    "esdoc-es7-plugin": "~0.0.3",
     "eslint": "~3.9.1",
+    "jaguarjs-jsdoc": "^1.0.1",
+    "jsdoc": "^3.4.3",
+    "jsdoc-strip-async-await": "^0.1.0",
     "mocha": "~3.1.0",
-    "nock": "~9.0.2",
     "nyc": "~8.4.0",
     "sinon": "~1.17.4",
     "sinon-as-promised": "~4.0.2",
@@ -65,5 +64,37 @@
       "html",
       "text-summary"
     ]
+  },
+  "apes-tests-main": {
+    "env1": {
+      "port": 123,
+      "useragent": "AGENT1"
+    },
+    "env2": {
+      "port": 465,
+      "useragent": "AGENT2"
+    }
+  },
+  "apes-tests-empty": {},
+  "apes-tests-string": "",
+  "apes-tests-http-server": {
+    "server1": {
+      "httpServer": {
+        "port": 1,
+        "ssl": {
+          "enabled": true,
+          "key": "test/fixtures/ssl/server.key",
+          "certificate": "test/fixtures/ssl/server.crt"
+        }
+      },
+      "other": {
+        "port": 1234
+      },
+      "other2": "CONFIG"
+    },
+    "server2": {
+      "httpServer": "CONFIG"
+    },
+    "server3": {}
   }
 }

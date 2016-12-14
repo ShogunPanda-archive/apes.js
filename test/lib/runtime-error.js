@@ -6,9 +6,7 @@
 /* globals describe, it */
 /* eslint-disable no-unused-expressions, prefer-arrow-callback, max-statements */
 
-const chai = require("chai");
-
-const expect = chai.expect;
+const expect = require("chai").expect;
 
 const RuntimeError = require("../../lib/runtime-error");
 

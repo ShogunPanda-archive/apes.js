@@ -11,58 +11,36 @@ https://sw.cowtech.it/apes.js
 
 ## Supported implementations.
 
-apes.js is written using async/await, which is available from Node 7.0.0 using `--harmony-async-await` flag.
-
-It supports and has been tested on [NodeJS](http://nodejs.org) 7.0+, using `--harmony-async-await` for async/await support.
+apes.js is written using async/await, which is available from Node 7.0.0 using `--harmony_async-await` flag.
 
 ## Usage
 
 ### Standalone application
 
-To create a Node.js application which already takes care of logging, extend the `Application` class and override its `prepare`, `execute` and `cleanup` methods.
+To create a Node.js application which already takes care of logging, call the `Application.execute` and provide a main function.
 
-Then, instantiate the class and call it's `run` method.
+The function will be called with a `application` object, which has a `logger` setup.
  
 ```javascript
 const apes = require("apes");
 
-class CustomApplication extends apes.Application{
-  prepare(){
-    // Do something here
-  }
-
-  execute(){
-    // Do something here - Core logic goes here.
-  }
-
-  cleanup(){
-    // Do something here
-  }
-}
-
-new CustomApplication().run();
+apes.Application.execute("confRoot", application => {
+  // Do something here
+});
 ```
 
 ### HTTP Server
 
-To create a fully working light-weight HTTP server, extend the `HTTPServer` class and override its `addRoutes` and `addMiddlewares` methods.
+To create a fully working light-weight HTTP server, call `HTTPServer.execute` providing a root key in the `package.json` and a main function.
 
-Then, instantiate the class and call it's `run` method.
+The function will be called with a `server` object, which has a `express` property to define routes.
 
 ```javascript
 const apes = require("apes");
 
-class CustomServer extends apes.HTTP.Server{
-  addRoutes(){
-    // Do something here - Core logic goes here.
-  }
-
-  addMiddlewares(){
-    // Do something here - Optional
-  }
-}
-
-new CustomServer().run();
+apes.HTTPServer.execute("confRoot.http", server => {
+  // Do something here - Core logic goes here, by adding routes to server.express
+});
 ```
 
 ## API Documentation

@@ -11,35 +11,31 @@ const sinon = require("sinon");
 const fs = require("fs-extra");
 const path = require("path");
 const http = require("http");
+const Bluebird = require("bluebird");
 
 const expect = chai.expect;
-chai.use(require("chai-as-promised"));
 chai.use(require("chai-http"));
 require("sinon-as-promised");
 
 const HTTPServer = require("../../lib/http-server");
 const Application = require("../../lib/application");
 const Logger = require("../../lib/logger");
+const Utils = require("../../lib/utils");
 
-const SERVER_DELAY = 20;
+const SERVER_DELAY = 5;
 let basePort = 3010;
 
 describe("HTTPServer", function(){
   beforeEach(function(){
-    Application.processName = "server";
-    this.subject = new HTTPServer();
-    this.subject.configuration = {httpServer: {port: basePort + 2}};
-    this.subject.sanitizeConfiguration();
-    basePort += 3;
+    basePort += 1;
 
     this.sandbox = sinon.sandbox.create();
 
-    this.sandbox.stub(this.subject.logger, "info");
-    this.sandbox.stub(this.subject.logger, "warn");
-    this.sandbox.stub(this.subject.logger, "error");
-    this.sandbox.stub(this.subject.requestsLogger, "debug");
-    this.sandbox.stub(this.subject.requestsLogger, "info");
-    this.sandbox.stub(this.subject.requestsLogger, "error");
+    this.sandbox.stub(Logger, "info").resolves();
+    this.sandbox.stub(Logger, "warn").resolves();
+    this.errorStub = this.sandbox.stub(Logger, "error").resolves();
+    this.sandbox.stub(Logger, "debug").resolves();
+    this.sandbox.stub(Logger, "fatal").resolves();
   });
 
   afterEach(function(){
@@ -47,666 +43,657 @@ describe("HTTPServer", function(){
     this.sandbox.restore();
   });
 
-  describe(".constructor", function(){
-    it("should create a requestsLogger", function(){
-      expect(this.subject.requestsLogger).to.be.instanceof(Logger);
-    });
-  });
-
-  describe(".prepare", function(){
-    it("should set the port and the requestsLogger, then prepare express", function(){
-      this.subject.configuration = {httpServer: {port: 123}};
-
-      return expect(this.subject.prepare()).to.be.fulfilled.then(() => {
-        expect(this.subject.express).to.be.a("function");
-        expect(this.subject.port).to.eq(123);
-        expect(this.subject.requestsLogger.backend.transports.file.filename).to.match(/^server-requests\.log/);
-      });
-    });
-  });
-
   describe(".execute", function(){
-    it("should reply to HTTP pings and support connection dropping when quitting", function(done){
-      Application.production = true;
-      Application.hostName = "HOST";
+    it("should correctly create and run an application", async function(){
+      const applicationCreateStub = this.sandbox.stub(Application, "create").returns("APPLICATION");
+      const serverCreateStub = this.sandbox.stub(HTTPServer, "create").resolves("SERVER");
+      const runStub = this.sandbox.stub(HTTPServer, "run").resolves("OK");
+
+      expect(await HTTPServer.execute("apes-tests-http-server", "MAIN", "PREPARE", process.cwd())).to.eql("OK");
+      expect(applicationCreateStub.calledWith("apes-tests-http-server", process.cwd())).to.be.ok;
+      expect(serverCreateStub.calledWith("APPLICATION", "MAIN", "PREPARE")).to.be.ok;
+      expect(runStub.calledWith("SERVER")).to.be.ok;
+    });
+
+    it("should use good defaults", async function(){
+      const createStub = this.sandbox.spy(Application, "create");
+      const runStub = this.sandbox.stub(Application, "run").resolves("OK");
+
+      this.sandbox.stub(Application, "loadConfiguration").returns({httpServer: {}});
+
+      expect(await HTTPServer.execute(null, "MAIN")).to.eql("OK");
+      expect(createStub.calledWith("apes", null)).to.be.ok;
+      expect(runStub.calledWith(sinon.match.object)).to.be.ok;
+    });
+  });
+
+  describe(".create", function(){
+    it("should create a server and setup port, SSL and express", async function(){
+      const main = this.sandbox.stub().resolves();
+      const prepare = this.sandbox.stub().resolves();
+
+      const application = Application.create("apes-tests-http-server");
+      const subject = await HTTPServer.create(application, main, prepare);
+
+      expect(main.called).to.be.ok;
+      expect(prepare.called).to.be.ok;
+      expect(subject.port).to.eql(1);
+      expect(subject.ssl).to.eql({
+        key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.key")),
+        cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.crt"))
+      });
+      expect(subject.express).not.to.be.undefined;
+      expect(subject.requestsLogger.backend.transports.file.filename).to.match(/^_mocha-requests\.log/);
+    });
+
+    it("should use ENV port", async function(){
+      process.env.PORT = 123;
+      const application = Application.create("apes-tests-http-server");
+
+      const subject = await HTTPServer.create(application);
+      expect(subject.port).to.eql(123);
+      Reflect.deleteProperty(process.env, "PORT");
+    });
+
+    it("should use a default port", async function(){
+      process.env.PORT = "INVALID";
+      const application = Application.create("apes-tests-http-server");
+
+      const subject = await HTTPServer.create(application);
+      expect(subject.port).to.eql(HTTPServer.defaultPort);
+      Reflect.deleteProperty(process.env, "PORT");
+    });
+  });
+
+  describe(".run", function(){
+    beforeEach(function(){
+      this.application = Application.create("apes-tests-http-server");
+      this.application.packageInfo = Object.assign({"apes-tests-http-server": {only: {httpServer: {port: basePort++}}}});
+    });
+
+    it("should reply to HTTP pings and support connection dropping when quitting", async function(){
+      this.application.production = true;
+      this.application.hostName = "HOST";
 
       this.sandbox.stub(process, "hrtime").returns([4, 123000]);
       this.sandbox.stub(process, "uptime").returns(123.456789);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      const subject = await HTTPServer.create(this.application);
+      HTTPServer.run(subject);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/ping").then(response => {
-          expect(response).to.have.header("X-Served-By", "HOST");
-          expect(response).to.have.header("X-Up-Time", "123456.789ms");
-          expect(response).to.have.header("X-Response-Time", "4000.123ms");
-          expect(response).to.have.header("Content-Encoding", "gzip");
-          expect(response.text).to.equal("pong");
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).get("/ping");
+      process.kill(process.pid, "SIGUSR2");
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.header("X-Served-By", "HOST");
+      expect(response).to.have.header("X-Up-Time", "123456.789ms");
+      expect(response).to.have.header("X-Response-Time", "4000.123ms");
+      expect(response).to.have.header("Content-Encoding", "gzip");
+      expect(response.text).to.equal("pong");
     });
 
-    it("should close pending connection without blocking when quitting", function(done){
-      this.subject.prepare().then(() => this.subject.execute());
+    it("should close pending connection without blocking when quitting", async function(){
+      const subject = await HTTPServer.create(this.application);
+      HTTPServer.run(subject);
 
       const agent = new http.Agent({keepAlive: true, keepAliveMsecs: 3000});
 
-      setTimeout(() => {
-        http.get({hostname: "127.0.0.1", port: basePort - 1, path: "/ping", agent}, () => {
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      await Utils.delay(SERVER_DELAY);
+      await Bluebird.fromCallback(cb => http.get({hostname: "127.0.0.1", port: subject.port, path: "/ping", agent}, () => cb()));
+      process.kill(process.pid, "SIGUSR2");
     });
 
-    it("should support text response", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => this.sendResponse(req, res, null, "TEXT", [1, 2]));
-      };
+    it("should support text response", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, null, "TEXT", [1, 2]));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).get("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(response => {
-          expect(response).to.have.status(200);
-          expect(response).to.be.text;
-          expect(response.text).to.equal("TEXT");
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(200);
+      expect(response).to.be.text;
+      expect(response.text).to.equal("TEXT");
     });
 
-    it("should support bodyless response", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => {
+    it("should support bodyless response", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => {
           req.startTime = null;
-          this.sendResponse(req, res, 200);
+          HTTPServer.sendResponse(server, req, res, 200);
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).get("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(response => {
-          expect(response).to.have.status(200);
-          expect(response.text.length).to.equal(0);
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(200);
+      expect(response.text.length).to.equal(0);
     });
 
-    it("should support redirect response", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => this.redirectTo(req, res, 301, "https://cision.com", [1, 2]));
-      };
+    it("should support redirect response", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => HTTPServer.redirectTo(server, req, res, 301, "https://cowtech.it", [1, 2]));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").redirects(0).then(Promise.reject).catch(error => {
-          expect(error.response).to.have.status(301);
-          expect(error.response).to.redirectTo("https://cision.com");
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+        expect(error.response).to.have.status(301);
+        expect(error.response).to.redirectTo("https://cowtech.it");
+      }
     });
 
-    it("should support redirect response with no startTime", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => {
+    it("should support redirect response with no startTime", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => {
           req.startTime = null;
-          this.redirectTo(req, res, 301, "https://cision.com");
+          HTTPServer.redirectTo(server, req, res, 301, "https://cowtech.it");
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").redirects(0).then(Promise.reject).catch(error => {
-          expect(error.response).to.have.status(301);
-          expect(error.response).to.redirectTo("https://cision.com");
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+        expect(error.response).to.have.status(301);
+        expect(error.response).to.redirectTo("https://cowtech.it");
+      }
     });
 
-    it("should support redirect response with a default code", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => this.redirectTo(req, res, null, "https://cision.com"));
-      };
+    it("should support redirect response with a default code", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => HTTPServer.redirectTo(server, req, res, null, "https://cowtech.it"));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").redirects(0).then(Promise.reject).catch(error => {
-          expect(error.response).to.have.status(302);
-          expect(error.response).to.redirectTo("https://cision.com");
+      try{
+        await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+        expect(error.response).to.have.status(302);
+        expect(error.response).to.redirectTo("https://cowtech.it");
+      }
     });
 
-    it("should serve static files", function(done){
-      this.subject.addRoutes = function(){
-        this.setupStaticFolder(`${__dirname}/..`);
-      };
+    it("should serve static files", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        HTTPServer.setupStaticFolder(server, `${__dirname}/../..`);
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/fixtures/configurations/main.json").then(response => {
-          expect(response).to.have.status(200);
-          expect(response.body).to.eql(require("../fixtures/configurations/main.json")); // eslint-disable-line global-require
+      const response = await chai.request(subject.express).get("/package.json");
+      process.kill(process.pid, "SIGUSR2");
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(200);
+      expect(response.body).to.eql(require("../../package.json")); // eslint-disable-line global-require
     });
 
-    it("should support CORS", function(done){
-      this.subject.addRoutes = function(){
-        this.addCORSHandling("foo.com", "X-Header", "PATCH", 123);
-      };
+    it("should support CORS", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        HTTPServer.addCORSHandling(server, "foo.com", "X-Header", "PATCH", 123);
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).options("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).options("/foo").then(response => {
-          expect(response).to.have.status(204);
-          expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
-          expect(response).to.have.header("Access-Control-Allow-Headers", "X-Header");
-          expect(response).to.have.header("Access-Control-Allow-Methods", "PATCH");
-          expect(response).to.have.header("Access-Control-Max-Age", 123);
-          expect(response.body).to.eql({});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(204);
+      expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
+      expect(response).to.have.header("Access-Control-Allow-Headers", "X-Header");
+      expect(response).to.have.header("Access-Control-Allow-Methods", "PATCH");
+      expect(response).to.have.header("Access-Control-Max-Age", 123);
+      expect(response.body).to.eql({});
     });
 
-    it("should support CORS with defaults", function(done){
-      this.subject.addRoutes = function(){
-        this.addCORSHandling("foo.com");
-      };
+    it("should support CORS with defaults", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        HTTPServer.addCORSHandling(server, "foo.com");
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).options("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).options("/foo").then(response => {
-          expect(response).to.have.status(204);
-          expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
-          expect(response).to.have.header("Access-Control-Allow-Headers", "Content-Type");
-          expect(response).to.have.header("Access-Control-Allow-Methods", "GET, POST");
-          expect(response).to.have.header("Access-Control-Max-Age", "31536000");
-          expect(response.body).to.eql({});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(204);
+      expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
+      expect(response).to.have.header("Access-Control-Allow-Headers", "Content-Type");
+      expect(response).to.have.header("Access-Control-Allow-Methods", "GET, POST");
+      expect(response).to.have.header("Access-Control-Max-Age", "31536000");
+      expect(response.body).to.eql({});
     });
 
-    it("should disable CORS if no Origin is available", function(done){
-      this.subject.addRoutes = function(){
-        this.addCORSHandling();
-      };
+    it("should disable CORS if no Origin is available", async function(){
+      const subject = await HTTPServer.create(this.application, server => {
+        HTTPServer.addCORSHandling(server);
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).options("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).options("/foo").then(response => {
-          expect(response).to.have.status(204);
-          expect(response).not.to.have.header("Access-Control-Allow-Origin");
-          expect(response).not.to.have.header("Access-Control-Allow-Headers");
-          expect(response).not.to.have.header("Access-Control-Allow-Methods");
-          expect(response).not.to.have.header("Access-Control-Max-Age");
-          expect(response.body).to.eql({});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(204);
+      expect(response).not.to.have.header("Access-Control-Allow-Origin");
+      expect(response).not.to.have.header("Access-Control-Allow-Headers");
+      expect(response).not.to.have.header("Access-Control-Allow-Methods");
+      expect(response).not.to.have.header("Access-Control-Max-Age");
+      expect(response.body).to.eql({});
     });
 
-    it("should handle invalid routes", function(done){
-      Application.production = true;
+    it("should handle invalid routes", async function(){
+      this.application.production = true;
+      const subject = await HTTPServer.create(this.application);
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/invalid").then(null, error => {
-          expect(error.response).to.have.header("Content-Type", "application/json; charset=utf-8");
-          expect(error.response).to.have.status(404);
-          expect(error.response.body).to.eql({errors: [{code: 404, message: "Not Found."}]});
+      try{
+        await chai.request(subject.express).get("/invalid");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+        expect(error.response).to.have.header("Content-Type", "application/json; charset=utf-8");
+        expect(error.response).to.have.status(404);
+        expect(error.response.body).to.eql({errors: [{code: 404, message: "Not Found."}]});
+      }
     });
 
-    it("should accept valid JSON POST bodies", function(done){
-      this.subject.addRoutes = function(){
-        this.express.post("/foo", (req, res) => this.sendResponse(req, res, 200, req.body));
-      };
+    it("should accept valid JSON POST bodies", async function(){
+      this.application.production = false;
 
-      Application.production = false;
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.post("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, 200, req.body));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send('[{"1": 2}]');
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).post("/foo").set("Content-Type", "application/json").send('[{"1": 2}]')
-          .then(response => {
-            expect(response).to.have.status(200);
-            expect(response).to.be.json;
-            expect(response.body).to.eql([{1: 2}]);
-
-            process.kill(process.pid, "SIGUSR2");
-            done();
-          });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(200);
+      expect(response).to.be.json;
+      expect(response.body).to.eql([{1: 2}]);
     });
 
-    it("should accept empty bodies", function(done){
-      this.subject.addRoutes = function(){
-        this.express.post("/foo", (req, res) => this.sendResponse(req, res, 200, {ok: true}));
-      };
+    it("should accept empty bodies", async function(){
+      this.application.production = true;
 
-      Application.production = true;
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.post("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, 200, {ok: true}));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
+      const response = await chai.request(subject.express).post("/foo").set("Content-Type", "application/json");
+      process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).post("/foo").set("Content-Type", "application/json")
-          .then(response => {
-            expect(response).to.have.status(200);
-            expect(response).to.be.json;
-
-            process.kill(process.pid, "SIGUSR2");
-            done();
-          });
-      }, SERVER_DELAY);
+      expect(response).to.have.status(200);
+      expect(response).to.be.json;
     });
 
-    it("should reject non JSON POST bodies", function(done){
-      this.subject.addRoutes = function(){
-        this.express.post("/foo", (req, res) => this.sendResponse(req, res, 200, "OK"));
-      };
+    it("should reject non JSON POST bodies", async function(){
+      this.application.production = true;
 
-      Application.production = true;
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.post("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, 200, "OK"));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).post("/foo").send("FOO").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(400);
-          expect(error.response.body).to.eql({errors: [{
-            code: 400,
-            message: "Invalid JSON POST data received.",
-            error: "Content-Type header must be match regular expression /^application\\/(.+\\+)?json/ and the data must a valid encoded JSON."
-          }]});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).post("/foo").send("FOO");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(400);
+        expect(error.response.body).to.eql({errors: [{
+          code: 400,
+          message: "Invalid JSON POST data received.",
+          error: "Content-Type header must be match regular expression /^application\\/(.+\\+)?json/ and the data must a valid encoded JSON."
+        }]});
+      }
     });
 
-    it("should reject malformed JSON POST bodies", function(done){
-      this.subject.addRoutes = function(){
-        this.express.post("/foo", (req, res) => this.sendResponse(req, res, 200, "OK"));
-      };
+    it("should reject malformed JSON POST bodies", async function(){
+      this.application.production = true;
 
-      Application.production = true;
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.post("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, 200, "OK"));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).post("/foo").set("Content-Type", "application/json").send("FOO").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(400);
-          expect(error.response.body).to.eql({errors: [{
-            code: 400,
-            message: "Invalid JSON POST data received.",
-            error: "Unexpected token F"
-          }]});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send("FOO");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(400);
+        expect(error.response.body).to.eql({errors: [{
+          code: 400,
+          message: "Invalid JSON POST data received.",
+          error: "Unexpected token F"
+        }]});
+      }
     });
 
-    it("should reject malformed JSON POST bodies", function(done){
-      this.subject.addRoutes = function(){
-        this.express.post("/foo", (req, res) => this.sendResponse(req, res, 200, "OK"));
-      };
+    it("should reject malformed JSON POST bodies", async function(){
+      this.application.production = true;
 
-      Application.production = true;
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.post("/foo", (req, res) => HTTPServer.sendResponse(server, req, res, 200, "OK"));
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).post("/foo").set("Content-Type", "application/json").send("FOO").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(400);
-          expect(error.response.body).to.eql({errors: [{
-            code: 400,
-            message: "Invalid JSON POST data received.",
-            error: "Unexpected token F"
-          }]});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send("FOO");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(400);
+        expect(error.response.body).to.eql({errors: [{
+          code: 400,
+          message: "Invalid JSON POST data received.",
+          error: "Unexpected token F"
+        }]});
+      }
     });
 
-    it("should handle unexpected errors in production mode", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", () => {
+    it("should handle unexpected errors in production mode", async function(){
+      this.application.production = true;
+
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", () => {
           throw "ERROR!";
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      Application.production = true;
+      await Utils.delay(SERVER_DELAY);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(500);
-          expect(error.response.body).to.eql({errors: [{
-            code: 500,
-            message: "Internal Application Error."
-          }]});
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(500);
+        expect(error.response.body).to.eql({errors: [{
+          code: 500,
+          message: "Internal Application Error."
+        }]});
 
-          expect(this.subject.logger.error.calledWith("ERROR!")).to.be.ok;
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+        expect(this.errorStub.calledWith(sinon.match.object, "ERROR!")).to.be.ok;
+      }
     });
 
-    it("should handle unexpected errors with details in non-production mode", function(done){
+    it("should handle unexpected errors with details in non-production mode", async function(){
+      this.application.production = false;
+
       const raisedError = new TypeError("ERROR!");
       raisedError.stack = "1\n2";
 
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", () => {
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", () => {
           throw raisedError;
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      Application.production = false;
+      await Utils.delay(SERVER_DELAY);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(500);
-          expect(error.response.body).to.eql({
-            type: "TypeError",
-            message: "ERROR!",
-            stack: ["2"]
-          });
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(500);
+        expect(error.response.body).to.eql({
+          type: "TypeError",
+          message: "ERROR!",
+          stack: ["2"]
         });
-      }, SERVER_DELAY);
+      }
     });
 
-    it("should handle string errors", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", () => {
+    it("should handle string errors", async function(){
+      this.application.production = false;
+
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", () => {
           throw "ERROR";
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      Application.production = false;
+      await Utils.delay(SERVER_DELAY);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(500);
-          expect(error.response.body).to.eql({errors: [{code: 500, message: "ERROR"}]});
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(500);
+        expect(error.response.body).to.eql({errors: [{code: 500, message: "ERROR"}]});
+      }
     });
 
-    it("should handle custom errors with details in non-production mode", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", () => {
+    it("should handle custom errors with details in non-production mode", async function(){
+      this.application.production = false;
+
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", () => {
           throw {name: "FOO", message: "BAR"};
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      Application.production = false;
+      await Utils.delay(SERVER_DELAY);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(500);
-          expect(error.response.body).to.eql({
-            type: "FOO",
-            message: "BAR",
-            stack: []
-          });
-
-          process.kill(process.pid, "SIGUSR2");
-          done();
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(500);
+        expect(error.response.body).to.eql({
+          type: "FOO",
+          message: "BAR",
+          stack: []
         });
-      }, SERVER_DELAY);
+      }
     });
 
-    it("should handle single error format", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => this.sendGeneralError(req, res, 523, "OK", true));
-      };
+    it("should handle single error format with string errors", async function(){
+      this.application.production = false;
 
-      this.subject.prepare().then(() => this.subject.execute());
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => HTTPServer.sendGeneralError(server, req, res, 523, "OK", true));
+      });
+      HTTPServer.run(subject);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(523);
-          expect(error.response.body).to.eql({error: {code: 523, message: "OK"}});
+      await Utils.delay(SERVER_DELAY);
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(523);
+        expect(error.response.body).to.eql({error: {code: 523, message: "OK"}});
+      }
     });
 
-    it("should handle single error format", function(done){
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => this.sendGeneralError(req, res, 523, {first: 1, second: 2}, true));
-      };
+    it("should handle single error format with objects", async function(){
+      this.application.production = false;
 
-      this.subject.prepare().then(() => this.subject.execute());
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => HTTPServer.sendGeneralError(server, req, res, 523, {first: 1, second: 2}, true));
+      });
+      HTTPServer.run(subject);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(null, error => {
-          expect(error.response).to.be.json;
-          expect(error.response).to.have.status(523);
-          expect(error.response.body).to.eql({error: {code: 523, first: 1, second: 2}});
+      await Utils.delay(SERVER_DELAY);
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      try{
+        await chai.request(subject.express).get("/foo");
+      }catch(error){
+        process.kill(process.pid, "SIGUSR2");
+
+        expect(error.response).to.be.json;
+        expect(error.response).to.have.status(523);
+        expect(error.response.body).to.eql({error: {code: 523, first: 1, second: 2}});
+      }
     });
 
-    it("should not blow up when response is already sent", function(done){
+    it("should not blow up when response is already sent", async function(){
+      this.application.production = false;
+
       const raisedError = new TypeError("ERROR!");
       raisedError.stack = "1\n2";
 
-      this.subject.addRoutes = function(){
-        this.express.get("/foo", (req, res) => {
-          this.sendResponse(req, res, 200, "OK");
+      const subject = await HTTPServer.create(this.application, server => {
+        server.express.get("/foo", (req, res) => {
+          HTTPServer.sendResponse(server, req, res, 200, "OK");
           throw "ERROR!";
         });
-      };
+      });
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/foo").then(response => {
-          expect(response).to.be.text;
-          expect(response).to.have.status(200);
-          expect(response.text).to.eql("OK");
+      const response = await chai.request(subject.express).get("/foo");
+      process.kill(process.pid, "SIGUSR2");
 
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      expect(response).to.be.text;
+      expect(response).to.have.status(200);
+      expect(response.text).to.eql("OK");
     });
 
-    it("should handle listening errors", function(){
-      this.subject.configuration = {httpServer: {port: 1}};
-      this.subject.sanitizeConfiguration();
+    it("should handle listening errors", async function(){
+      this.application.packageInfo["apes-tests-http-server"].only.httpServer.port = 1;
 
-      return expect(this.subject.prepare().then(() => this.subject.execute())).to.be.rejected
-        .then(error => {
-          expect(error.message).to.equal("listen EACCES 0.0.0.0:1");
-        });
+      const subject = await HTTPServer.create(this.application);
+
+      try{
+        await HTTPServer.run(subject);
+      }catch(error){
+        expect(error.message).to.equal("listen EACCES 0.0.0.0:1");
+      }
     });
 
-    it("should handle closing errors", function(){
-      this.sandbox.stub(fs, "readFileSync").returns("");
+    it("should handle closing errors", async function(){
+      const subject = await HTTPServer.create(this.application);
 
       setTimeout(() => {
         process.kill(process.pid, "SIGUSR2");
-        this.sandbox.stub(this.subject.server, "close").yields("ERROR");
+        this.sandbox.stub(subject.server, "close").yields("ERROR");
       }, SERVER_DELAY);
 
-      return expect(this.subject.prepare().then(() => this.subject.execute())).to.be.rejected
-        .then(error => {
-          expect(error).to.equal("ERROR");
-        });
+      try{
+        await HTTPServer.run(subject);
+      }catch(error){
+        expect(error).to.equal("ERROR");
+      }
     });
 
-    it("should handle SSL certificates", function(done){
-      Application.root = process.cwd();
-
-      this.subject.configuration = {httpServer:
-        {port: basePort++, ssl: {enabled: true, key: "test/fixtures/ssl/server.key", certificate: "test/fixtures/ssl/server.crt"}}
+    it("should handle SSL certificates", async function(){
+      this.application.packageInfo["apes-tests-http-server"].only.httpServer.ssl = {
+        enabled: true, key: "test/fixtures/ssl/server.key", certificate: "test/fixtures/ssl/server.crt"
       };
 
-      this.sandbox.stub(process, "hrtime").returns([4, 123000]);
-      this.sandbox.stub(process, "uptime").returns(123.456789);
+      const subject = await HTTPServer.create(this.application);
+      HTTPServer.run(subject);
 
-      this.subject.prepare().then(() => this.subject.execute());
+      await Utils.delay(SERVER_DELAY);
 
-      setTimeout(() => {
-        chai.request(this.subject.express).get("/ping").then(response => {
-          expect(response.text).to.equal("pong");
-          process.kill(process.pid, "SIGUSR2");
-          done();
-        });
-      }, SERVER_DELAY);
+      const response = await chai.request(subject.express).get("/ping");
+      process.kill(process.pid, "SIGUSR2");
+
+      expect(response.text).to.equal("pong");
     });
   });
 
-  describe(".loadConfiguration", function(){
+  describe("._loadConfiguration (private)", function(){
     beforeEach(function(){
-      this.subject.configurationPath = path.resolve(process.cwd(), "test/fixtures/configurations/main.json");
+      this.application = Application.create("apes-tests-http-server");
     });
 
     it("should set good defaults", function(){
-      Application.environment = "server1";
+      this.application.environment = "server1";
 
-      return expect(this.subject.loadConfiguration()).to.be.fulfilled.then(() => {
-        expect(this.subject.configuration).to.eql({httpServer: {port: 1, ssl: {enabled: "A", key: "B", certificate: "C"}}});
+      expect(HTTPServer._loadConfiguration(this.application)).to.eql({
+        port: 1, ssl: {enabled: true, certificate: "test/fixtures/ssl/server.crt", key: "test/fixtures/ssl/server.key"}
       });
     });
 
-    it("should use legacy configuration", function(){
-      Application.environment = "server2";
+    it("should reject when the file doesn't contain a object", function(){
+      this.application.environment = "server2";
 
-      return expect(this.subject.loadConfiguration()).to.be.fulfilled.then(() => {
-        expect(this.subject.configuration).to.eql({httpServer: {port: 1, ssl: {enabled: "A", key: "B", certificate: "C"}}});
-      });
+      expect(() => HTTPServer._loadConfiguration(this.application))
+        .to.throw('The value of the key "apes-tests-http-server.httpServer" in package.json must be a object.');
     });
 
-    it("should use the default port", function(){
-      Application.environment = "server3";
+    it("should use the default port and good SSL defaults", function(){
+      this.application.environment = "server3";
 
-      return expect(this.subject.loadConfiguration()).to.be.fulfilled.then(() => {
-        expect(this.subject.configuration).to.eql({httpServer: {
-          port: 21080, ssl: {enabled: false}
-        }});
-      });
+      expect(HTTPServer._loadConfiguration(this.application)).to.eql({port: HTTPServer.defaultPort, ssl: {enabled: false}});
+    });
+
+    it("should support other root key", function(){
+      expect(HTTPServer._loadConfiguration(this.application, "other")).to.eql({port: 1234, ssl: {enabled: false}});
+
+      expect(() => HTTPServer._loadConfiguration(this.application, "other2"))
+        .to.throw('The value of the key "apes-tests-http-server.other2" in package.json must be a object.');
     });
   });
 
-  describe(".sslConfig", function(){
+  describe("._loadSSL (private)", function(){
     it("should respect file configuration", function(){
-      Application.root = process.cwd();
+      const application = Application.create("apes-tests-http-server");
+      const configuration = {ssl: {enabled: true, key: "test/fixtures/ssl/server.key", certificate: "test/fixtures/ssl/server.crt"}};
 
-      this.subject.configuration = {httpServer:
-        {port: basePort++, ssl: {enabled: true, key: "test/fixtures/ssl/server.key", certificate: "test/fixtures/ssl/server.crt"}}
-      };
-
-      expect(this.subject.sslConfig()).to.eql({
+      expect(HTTPServer._loadSSL({application, configuration})).to.eql({
         key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.key")),
         cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/ssl/server.crt"))
       });
     });
 
     it("should use good defaults", function(){
-      const oldRoot = Application.root;
-      Application.root = path.resolve(process.cwd(), "test/fixtures/configurations");
-      this.subject.configuration = {httpServer: {port: basePort++, ssl: {enabled: true}}};
+      const application = Application.create("apes-tests-http-server");
+      const configuration = {ssl: {enabled: true}};
 
-      expect(this.subject.sslConfig()).to.eql({
-        key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/configurations/config/ssl/private-key.pem")),
-        cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/configurations/config/ssl/certificate.pem"))
-      });
+      application.root = path.resolve(application.root, "test/fixtures");
 
-      Application.root = oldRoot;
-    });
-  });
-
-  describe(".addRoutes", function(){
-    it("should show a warning about overriding", function(){
-      class MockServer extends HTTPServer{
-
-      }
-
-      const subject = new MockServer();
-      const warnStub = sinon.stub(subject.logger, "warn").resolves("WARNED");
-
-      return expect(subject.logger.prepare().then(() => subject.addRoutes())).to.become("WARNED").then(() => {
-        warnStub.restore();
-        expect(warnStub.calledWith("MockServer.addRoutes should override HTTPServer.addRoutes."));
+      expect(HTTPServer._loadSSL({application, configuration})).to.eql({
+        key: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/config/ssl/private-key.pem")),
+        cert: fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/config/ssl/certificate.pem"))
       });
     });
   });

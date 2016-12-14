@@ -1,3 +1,8 @@
+### 2016-12-14 / 0.7.0
+
+* Completely rewritten without classes to ease functional programming approach.
+* Removed configuration file in favor of reading settings from the `package.json`.
+
 ### 2016-11-14 / 0.6.3
 
 * CORS fix.
