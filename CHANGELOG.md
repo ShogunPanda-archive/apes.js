@@ -1,3 +1,7 @@
+### 2016-12-14 / 0.7.4
+
+* Handle HTTP server configuration errors.
+
 ### 2016-12-14 / 0.7.3
 
 * Re-add dependency removed by mistake.

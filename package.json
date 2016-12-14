@@ -91,7 +91,8 @@
       "other": {
         "port": 1234
       },
-      "other2": "CONFIG"
+      "other2": "CONFIG",
+      "none": "NONE"
     },
     "server2": {
       "httpServer": "CONFIG"

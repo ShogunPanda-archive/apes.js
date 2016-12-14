@@ -115,6 +115,20 @@ describe("HTTPServer", function(){
       expect(subject.port).to.eql(HTTPServer.defaultPort);
       Reflect.deleteProperty(process.env, "PORT");
     });
+
+    it("handle creation error", async function(){
+      const errorStub = sinon.stub(console, "error");
+
+      const application = Application.create("apes-tests-http-server");
+
+      try{
+        await HTTPServer.create(application, null, null, "none");
+      }catch(error){
+        expect(errorStub.calledWith(
+          'Cannot load HTTP Server configuration: TypeError: The value of the key "apes-tests-http-server.none" in package.json must be a object.. Exiting ...'
+        )).to.be.ok;
+      }
+    });
   });
 
   describe(".run", function(){

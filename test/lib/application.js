@@ -148,7 +148,6 @@ describe("Application", function(){
 
     it("should handle logging creation failures", async function(){
       const errorStub = this.sandbox.stub(console, "error");
-      const exitStub = this.sandbox.stub(process, "exit");
       this.sandbox.stub(Logger, "create").rejects("ERROR");
 
       try{
@@ -156,7 +155,6 @@ describe("Application", function(){
       }catch(error){
         expect(error).to.eql(new Error("ERROR"));
         expect(errorStub.calledWith("Cannot create the logger: Error: ERROR. Exiting ...")).to.be.ok;
-        expect(exitStub.calledWith(1)).to.be.ok;
       }
     });
 
