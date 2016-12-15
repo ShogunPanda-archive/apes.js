@@ -1,3 +1,7 @@
+### 2016-12-15 / 0.7.8
+
+* Improve exit signal handling.
+
 ### 2016-12-15 / 0.7.6
 
 * Improve exit signal handling.
