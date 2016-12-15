@@ -1,3 +1,7 @@
+### 2016-12-15 / 0.7.6
+
+* Improve exit signal handling.
+
 ### 2016-12-14 / 0.7.5
 
 * Handle HTTP server creation errors.
