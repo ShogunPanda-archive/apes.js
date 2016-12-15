@@ -25,6 +25,8 @@ const Utils = require("../../lib/utils");
 const SERVER_DELAY = 5;
 let basePort = 3010;
 
+process.on("SIGUSR2", () => false);
+
 describe("HTTPServer", function(){
   beforeEach(function(){
     basePort += 1;
@@ -59,6 +61,7 @@ describe("HTTPServer", function(){
       const createStub = this.sandbox.spy(Application, "create");
       const runStub = this.sandbox.stub(Application, "run").resolves("OK");
 
+      this.sandbox.stub(process, "kill").resolves("OK");
       this.sandbox.stub(Application, "loadConfiguration").returns({httpServer: {}});
 
       expect(await HTTPServer.execute(null, "MAIN")).to.eql("OK");
@@ -70,6 +73,7 @@ describe("HTTPServer", function(){
       const applicationCreateStub = this.sandbox.stub(Application, "create").returns("APPLICATION");
       const serverCreateStub = this.sandbox.stub(HTTPServer, "create").resolves("SERVER");
       this.sandbox.stub(Application, "run").resolves("OK");
+      this.sandbox.stub(process, "kill").resolves("OK");
 
       this.sandbox.stub(Application, "loadConfiguration").returns({httpServer: {}});
 
@@ -138,8 +142,6 @@ describe("HTTPServer", function(){
     });
 
     it("should reply to HTTP pings and support connection dropping when quitting", async function(){
-      process.removeAllListeners("SIGUSR2");
-
       this.application.production = true;
       this.application.hostName = "HOST";
 
@@ -168,7 +170,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       await Bluebird.fromCallback(cb => http.get({hostname: "127.0.0.1", port: subject.port, path: "/ping", agent}, () => cb()));
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
     });
 
     it("should support text response", async function(){
@@ -179,7 +181,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).get("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(200);
       expect(response).to.be.text;
@@ -197,7 +199,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).get("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(200);
       expect(response.text.length).to.equal(0);
@@ -214,7 +216,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         expect(error.response).to.have.status(301);
         expect(error.response).to.redirectTo("https://cowtech.it");
       }
@@ -234,7 +236,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         expect(error.response).to.have.status(301);
         expect(error.response).to.redirectTo("https://cowtech.it");
       }
@@ -251,7 +253,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo").redirects(0).then(Promise.reject);
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.have.status(302);
         expect(error.response).to.redirectTo("https://cowtech.it");
@@ -267,7 +269,7 @@ describe("HTTPServer", function(){
       await Utils.delay(SERVER_DELAY);
 
       const response = await chai.request(subject.express).get("/package.json");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(200);
       expect(response.body).to.eql(require("../../package.json")); // eslint-disable-line global-require
@@ -281,7 +283,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).options("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(204);
       expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
@@ -299,7 +301,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).options("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(204);
       expect(response).to.have.header("Access-Control-Allow-Origin", "foo.com");
@@ -317,7 +319,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).options("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(204);
       expect(response).not.to.have.header("Access-Control-Allow-Origin");
@@ -337,7 +339,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/invalid");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.have.header("Content-Type", "application/json; charset=utf-8");
         expect(error.response).to.have.status(404);
@@ -355,7 +357,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send('[{"1": 2}]');
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(200);
       expect(response).to.be.json;
@@ -372,7 +374,7 @@ describe("HTTPServer", function(){
 
       await Utils.delay(SERVER_DELAY);
       const response = await chai.request(subject.express).post("/foo").set("Content-Type", "application/json");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.have.status(200);
       expect(response).to.be.json;
@@ -391,7 +393,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).post("/foo").send("FOO");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(400);
         expect(error.response.body).to.eql({errors: [{
@@ -415,7 +417,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send("FOO");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(400);
         expect(error.response.body).to.eql({errors: [{
@@ -439,7 +441,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).post("/foo").set("Content-Type", "application/json").send("FOO");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(400);
         expect(error.response.body).to.eql({errors: [{
@@ -465,7 +467,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(500);
@@ -496,7 +498,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(500);
@@ -523,7 +525,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(500);
@@ -546,7 +548,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(500);
@@ -571,7 +573,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(523);
@@ -592,7 +594,7 @@ describe("HTTPServer", function(){
       try{
         await chai.request(subject.express).get("/foo");
       }catch(error){
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
 
         expect(error.response).to.be.json;
         expect(error.response).to.have.status(523);
@@ -617,7 +619,7 @@ describe("HTTPServer", function(){
       await Utils.delay(SERVER_DELAY);
 
       const response = await chai.request(subject.express).get("/foo");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response).to.be.text;
       expect(response).to.have.status(200);
@@ -640,7 +642,7 @@ describe("HTTPServer", function(){
       const subject = await HTTPServer.create(this.application);
 
       setTimeout(() => {
-        process.kill(process.pid, "SIGHUP");
+        process.kill(process.pid, "SIGUSR2");
         this.sandbox.stub(subject.server, "close").yields("ERROR");
       }, SERVER_DELAY);
 
@@ -662,7 +664,7 @@ describe("HTTPServer", function(){
       await Utils.delay(SERVER_DELAY);
 
       const response = await chai.request(subject.express).get("/ping");
-      process.kill(process.pid, "SIGHUP");
+      process.kill(process.pid, "SIGUSR2");
 
       expect(response.text).to.equal("pong");
     });
