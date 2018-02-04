@@ -1,9 +1,9 @@
 # apes.js
 
-[![Package Version](https://badge.fury.io/js/apes.png)](http://badge.fury.io/js/apes)
-[![Dependency Status](https://gemnasium.com/ShogunPanda/apes.js.png?travis)](https://gemnasium.com/ShogunPanda/apes.js)
-[![Build Status](https://secure.travis-ci.org/ShogunPanda/apes.js.png?branch=master)](http://travis-ci.org/ShogunPanda/apes.js)
-[![Coverage Status](https://coveralls.io/repos/github/ShogunPanda/apes.js/badge.svg?branch=master)](https://coveralls.io/github/ShogunPanda/apes.js?branch=master)
+[![Package Version](https://img.shields.io/npm/v/apes.svg)](https://npmjs.com/package/apes)
+[![Dependency Status](https://img.shields.io/gemnasium/ShogunPanda/apes.js.svg)](https://gemnasium.com/ShogunPanda/apes.js)
+[![Build Status](https://img.shields.io/travis/ShogunPanda/apes.js.svg)](http://travis-ci.org/ShogunPanda/apes.js)
+[![Coverage Status](https://img.shields.io/coveralls/github/ShogunPanda/apes.js.svg)](https://coveralls.io/github/ShogunPanda/apes.js)
 
 A tiny application and HTTP API framework for Express.js.
 
@@ -60,4 +60,4 @@ The API documentation can be found [here](https://shogunpanda.github.io/apes.js)
 
 Copyright (C) 2016 and above Shogun <shogun@cowtech.it>.
 
-Licensed under the MIT license, which can be found at http://opensource.org/licenses/MIT.
+Licensed under the MIT license, which can be found at https://choosealicense.com/licenses/mit.
