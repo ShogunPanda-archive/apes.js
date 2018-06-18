@@ -1,3 +1,8 @@
+### 2018-06-18 / 0.7.9
+
+* chore: End of development notice.
+* Updated license links and badges.
+
 ### 2016-12-15 / 0.7.8
 
 * Improve exit signal handling.
