@@ -50,7 +50,7 @@
     "chai-http": "~3.0.0",
     "chai-moment": "~0.1.0",
     "coveralls": "~2.11.14",
-    "eslint": "~3.12.1",
+    "eslint": "~4.18.2",
     "jaguarjs-jsdoc": "^1.0.1",
     "jsdoc": "^3.4.3",
     "jsdoc-strip-async-await": "^0.1.0",
