@@ -1,17 +1,8 @@
 # apes.js
 
-[![Package Version](https://img.shields.io/npm/v/apes.svg)](https://npmjs.com/package/apes)
-[![Dependency Status](https://img.shields.io/gemnasium/ShogunPanda/apes.js.svg)](https://gemnasium.com/ShogunPanda/apes.js)
-[![Build Status](https://img.shields.io/travis/ShogunPanda/apes.js.svg)](http://travis-ci.org/ShogunPanda/apes.js)
-[![Coverage Status](https://img.shields.io/coveralls/github/ShogunPanda/apes.js.svg)](https://coveralls.io/github/ShogunPanda/apes.js)
-
-## END OF DEVELOPMENT NOTICE
-
-# This package has been discontinued.
+## END OF DEVELOPMENT NOTICE - This package has been discontinued
 
 A tiny application and HTTP API framework for Express.js.
-
-https://sw.cowtech.it/apes.js
 
 ## Supported implementations.
 
@@ -26,9 +17,9 @@ To create a Node.js application which already takes care of logging, call the `A
 The function will be called with a `application` object, which has a `logger` setup.
 
 ```javascript
-const apes = require("apes")
+const apes = require('apes')
 
-apes.Application.execute("confRoot", application => {
+apes.Application.execute('confRoot', application => {
   // Do something here
 })
 ```
@@ -40,9 +31,9 @@ To create a fully working light-weight HTTP server, call `HTTPServer.execute` pr
 The function will be called with a `server` object, which has a `express` property to define routes.
 
 ```javascript
-const apes = require("apes")
+const apes = require('apes')
 
-apes.HTTPServer.execute("confRoot.http", server => {
+apes.HTTPServer.execute('confRoot.http', server => {
   // Do something here - Core logic goes here, by adding routes to server.express
 })
 ```
